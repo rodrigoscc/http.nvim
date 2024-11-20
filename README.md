@@ -94,12 +94,65 @@ Content-Type: application/json
 }
 ```
 
-#### Special request-scoped variables
+#### Reserved request-scoped variables
 | Variable              | Description                                                                      |
 | --------------------- | -------------------------------------------------------------------------------- |
 | `request.title`       | The title of the request. Generally used to search and run the request directly. |
-| `request.after_hook`  | The hook function to run after the request completes.                             |
-| `request.before_hook` | The hook function to run before the request completes.                           |
+| `request.after_hook`  | The hook function name to run after the request completes.                       |
+| `request.before_hook` | The hook function name to run before the request completes.                      |
+
+
+### Hooks
+Hooks are declared in a separate Lua file, for easier maintenance and reuse. Enter the hooks file with `:Http open_hooks` and declare your hooks in the file.
+
+```lua
+local show_result = require("http-nvim.hooks_utils").show
+local update_env = require("http-nvim.hooks_utils").update_env
+
+local function ask_for_confirmation(request, start_request)
+	local confirmation =
+		vim.fn.input("Are you sure you want to run this request? [y/N] ")
+
+	if confirmation == "y" or confirmation == "Y" then
+		start_request()
+	end
+end
+
+local function save_access_token(request, response, stdout)
+	show_result(request, response)
+
+	if response.status_code ~= 200 then
+		return
+	end
+
+	update_env({
+		access_token = response.body.access_token,
+		refresh_token = response.body.refresh_token,
+	})
+end
+
+return {
+	save_access_token = save_access_token,
+    ask_for_confirmation = ask_for_confirmation,
+}
+```
+
+```http
+@request.title = Login
+@request.before_hook = ask_for_confirmation
+@request.after_hook = save_access_token
+POST {{api_url}}/login
+Content-Type: application/json
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+```
+
+The above, once the `Login` request is run, will ask for confirmation and then update the environment with the access and refresh token if a 200 status code is returned.
+
+### Environments
 
 ### Commands
 

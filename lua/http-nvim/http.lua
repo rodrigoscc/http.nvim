@@ -71,8 +71,6 @@ function Http:run(request, override_context)
     self.last_request = request
     self.last_override_context = override_context
 
-    ui.set_request_state(request, "running")
-
     local source = request.source
 
     local env_context = project.get_env_variables()
@@ -105,6 +103,8 @@ function Http:run(request, override_context)
             content,
             job.on_exit_func(request, after_hook)
         )
+
+        ui.set_request_state(request, "running")
 
         request_job:start()
     end
