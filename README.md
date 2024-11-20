@@ -153,6 +153,24 @@ Content-Type: application/json
 The above, once the `Login` request is run, will ask for confirmation and then update the environment with the access and refresh token if a 200 status code is returned.
 
 ### Environments
+Environments hold variables that are available to all requests in the project. To create a new environment, run `:Http create_env`. A `.json` file will be opened with each environment variables. For instance, the following environments file has the `local` and `staging` environments.
+
+```json
+{
+    "local": {
+        "password": "password123",
+        "username": "localuser",
+	"api_url": "http://localhost:3000"
+    },
+    "staging": {
+        "password": "password456",
+        "username": "staginguser",
+	"api_url": "https://staging.api.com"
+    }
+}
+```
+
+Then, select an environment with `:Http select_env`. Now, all the variables in the environment will be available to all requests.
 
 ### Commands
 
