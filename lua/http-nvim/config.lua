@@ -23,8 +23,16 @@ local defaults = {
 ---@type http.Opts
 M.options = defaults
 
+local function define_highlights()
+    vim.cmd([[
+    highlight default HttpFinished ctermfg=Green guifg=#96F291
+    highlight default HttpRunning ctermfg=Yellow guifg=#FFEC63
+    ]])
+end
+
 ---@param opts? http.Opts
 M.setup = function(opts)
+    define_highlights()
     M.options = vim.tbl_deep_extend("force", defaults, opts or {})
 end
 
@@ -42,5 +50,10 @@ end
 M.get_hooks_path = function()
     return Path:new(M.options.http_dir, M.options.hooks_file)
 end
+
+M.highlights = {
+    finished = "HttpFinished",
+    running = "HttpRunning",
+}
 
 return M

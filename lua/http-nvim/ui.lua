@@ -1,5 +1,7 @@
 local utils = require("http-nvim.utils")
 local request_id = require("http-nvim.requests").id
+local status_namespace = vim.api.nvim_create_namespace("http-nvim-status")
+local config = require("http-nvim.config")
 
 local M = {}
 
@@ -114,6 +116,52 @@ M.show = function(request, response, output)
         show_response(request, response)
     else
         show_raw_output(request, output)
+    end
+end
+
+---@enum http.RequestState
+local State = {
+    Running = "running",
+    Finished = "finished",
+}
+
+local Icons = {
+    [State.Running] = "󰦖",
+    [State.Finished] = "󰄳",
+}
+
+local Highlights = {
+    [State.Running] = config.highlights.running,
+    [State.Finished] = config.highlights.finished,
+}
+
+---Set the request state
+---@param request http.Request
+---@param state http.RequestState
+M.set_request_state = function(request, state)
+    if request.source.type ~= "buffer" then
+        return
+    end
+
+    local request_line, _, _, _ = request.node:range()
+
+    local icon = Icons[state]
+    local highlight = Highlights[state]
+
+    local extmark_id = request_line
+
+    local bufnr = request.source.route
+    ---@cast bufnr integer
+
+    vim.api.nvim_buf_set_extmark(bufnr, status_namespace, request_line, 0, {
+        virt_text = { { icon, highlight } },
+        id = extmark_id,
+    })
+
+    if state == State.Finished then
+        vim.defer_fn(function()
+            vim.api.nvim_buf_del_extmark(bufnr, status_namespace, extmark_id)
+        end, 10000)
     end
 end
 

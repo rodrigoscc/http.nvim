@@ -1,7 +1,7 @@
 local http = require("http-nvim.http")
 local project = require("http-nvim.project")
 local hooks = require("http-nvim.hooks")
-local display = require("http-nvim.display")
+local ui = require("http-nvim.ui")
 local Source = require("http-nvim.source").Source
 local SourceType = require("http-nvim.source").type
 local id = require("http-nvim.requests").id
@@ -87,7 +87,7 @@ local subcommand_tbl = {
                     value = ""
                 end
 
-                display.show_in_floating(value)
+                ui.show_in_floating(value)
             end
         end,
     },

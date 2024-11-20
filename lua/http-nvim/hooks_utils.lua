@@ -1,5 +1,5 @@
 local project = require("http-nvim.project")
-local display = require("http-nvim.display")
+local ui = require("http-nvim.ui")
 local http = require("http-nvim.http")
 
 local M = {}
@@ -18,7 +18,7 @@ end
 
 M.show = function(request, response, output)
     vim.schedule(function()
-        display.show(request, response, output)
+        ui.show(request, response, output)
     end)
 end
 

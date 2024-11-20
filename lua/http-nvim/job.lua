@@ -1,5 +1,5 @@
 local Job = require("plenary.job")
-local display = require("http-nvim.display")
+local ui = require("http-nvim.ui")
 local utils = require("http-nvim.utils")
 local url = require("http-nvim.requests").url
 local log = require("http-nvim.log")
@@ -205,9 +205,13 @@ M.on_exit_func = function(request, after_hook)
             end
         end
 
+        vim.schedule(function()
+            ui.set_request_state(request, "finished")
+        end)
+
         if after_hook == nil then
             vim.schedule(function()
-                display.show(request, response, stdout)
+                ui.show(request, response, stdout)
             end)
         else
             after_hook(request, response, stdout)

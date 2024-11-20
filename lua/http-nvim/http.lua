@@ -1,6 +1,7 @@
 local hooks = require("http-nvim.hooks")
 local job = require("http-nvim.job")
 local project = require("http-nvim.project")
+local ui = require("http-nvim.ui")
 
 ---@class Http
 ---@field last_request http.Request
@@ -69,6 +70,8 @@ end
 function Http:run(request, override_context)
     self.last_request = request
     self.last_override_context = override_context
+
+    ui.set_request_state(request, "running")
 
     local source = request.source
 
