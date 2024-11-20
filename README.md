@@ -15,6 +15,7 @@
     - Update the current environment
     - Access the response
     - Run other request with a different context
+    - Condition the request to run or not
     - etc.
 - Hook functions are declared in a separate Lua file, for easier maintenance and reuse
 - Autocomplete variables with cmp
