@@ -31,6 +31,8 @@ Install the plugin with your preferred plugin manager:
     "rstcruzo/http.nvim",
     config = function()
         require("http-nvim").setup()
+        -- Run `:TSInstall http` after the setup is run for the first time and
+        -- reinstall the grammar if prompted.
     end,
 }
 ```
@@ -74,6 +76,30 @@ GET https://jsonplaceholder.typicode.com/posts
 ```
 
 Run a request from anywhere in your project with `:Http run`. Filter the requests by the `request.title`, if defined, or by the request start line.
+
+### Variables
+Variables are available anywhere below the line they were declared. Variables that start with `request.` are request-scoped and are only available in the request they were declared in.
+
+Example:
+```http
+@request.title = Create a post
+@userId = 1
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+    "title": "foo",
+    "body": "bar",
+    "userId": {{userId}}
+}
+```
+
+#### Special request-scoped variables
+| Variable              | Description                                                                      |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `request.title`       | The title of the request. Generally used to search and run the request directly. |
+| `request.after_hook`  | The hook function to run after the request completes.                             |
+| `request.before_hook` | The hook function to run before the request completes.                           |
 
 ### Commands
 
