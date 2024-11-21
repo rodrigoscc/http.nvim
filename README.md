@@ -207,6 +207,20 @@ require("lualine").setup({
 })
 ```
 
+### Cmp source
+
+You can use the cmp source to complete variables in your requests.
+
+```lua
+local cmp = require("cmp")
+
+cmp.setup({
+    sources = {
+        { name = "http" },
+    },
+})
+```
+
 # Feature Roadmap
 - [ ] Auto execute request at specified intervals
 - [ ] Keep a history of requests and responses
