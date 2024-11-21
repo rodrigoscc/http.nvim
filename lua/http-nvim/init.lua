@@ -291,29 +291,6 @@ vim.api.nvim_create_user_command("Http", http_cmd, {
 
 local M = {}
 
-M.init = function()
-    local parser_config =
-        require("nvim-treesitter.parsers").get_parser_configs()
-    parser_config.http2 = {
-        install_info = {
-            url = "https://github.com/rstcruzo/tree-sitter-http2",
-            branch = "main",
-            files = { "src/parser.c" },
-        },
-        filetype = "http",
-    }
-
-    vim.treesitter.language.register("http2", "http")
-
-    vim.filetype.add({
-        extension = {
-            http = "http",
-        },
-    })
-end
-
-M.init()
-
 ---@param opts? http.Opts
 M.setup = function(opts)
     config.setup(opts)

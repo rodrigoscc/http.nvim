@@ -44,7 +44,7 @@ Install the plugin with your preferred plugin manager:
 
 > [!NOTE]
 >
-> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. `setup()` replaces the default `http` grammar with [this](https://github.com/rstcruzo/tree-sitter-http2) one. This grammar provides features that aren't available in the default grammar.
+> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. When loading this plugin the default `http` grammar is replaced with [this](https://github.com/rstcruzo/tree-sitter-http2) one. This grammar provides features that aren't available in the default grammar.
 
 > [!NOTE]
 >
