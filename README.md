@@ -35,12 +35,20 @@ Install the plugin with your preferred plugin manager:
         -- Run `:TSInstall http` after the setup is run for the first time and
         -- reinstall the grammar if prompted.
     end,
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim"
+    },
 }
 ```
 
 > [!NOTE]
 >
 > http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. `setup()` modifies the default `http` grammar to use [this](https://github.com/rstcruzo/tree-sitter-http2) one. This grammar provides features that aren't available in the default grammar.
+
+> [!NOTE]
+>
+> http.nvim will format any JSON response if `jq` is installed.
 
 ## Usage
 
@@ -196,3 +204,15 @@ require("lualine").setup({
         lualine_a = { require("http-nvim").http_env_lualine_component },
     },
 })
+```
+
+# Feature Roadmap
+- [ ] Auto execute request at specified intervals
+- [ ] Keep a history of requests and responses
+- [ ] Support filtering responses with jq
+- [ ] Format other types of response (xml, html, etc.)
+- [ ] Export/import to postman
+- [ ] Jump to definition of variable
+- [ ] Test scripts
+- [ ] Pipelining requests
+

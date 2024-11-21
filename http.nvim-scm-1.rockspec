@@ -16,5 +16,6 @@ build = {
 		-- Add runtimepath directories, like
 		-- 'plugin', 'ftplugin', 'doc'
 		-- here. DO NOT add 'lua' or 'lib'.
+		"doc",
 	},
 }

@@ -1,0 +1,267 @@
+*http.nvim.txt*              For Neovim             Last change: 2024 Nov 20
+
+==============================================================================
+1. http.nvim                                          *http.nvim*
+
+`http.nvim` lets you run HTTP requests from Neovim, manage environments and
+run hooks before and after each request.
+
+FEATURES                                      *http.nvim-features*
+
+- Store multiple requests in a `.http` file
+- Search project requests with Telescope
+- Run project requests with Telescope
+- Manage multiple environments per project
+- Declare global or request-scoped variables in the `.http` file
+- Run last request run for easier iteration
+- Declare before and after hooks for each request
+- Autocomplete variables with cmp
+- Inspect variables current value
+- Lualine component to show current environment
+
+INSTALLATION                                      *http.nvim-installation*
+
+Install the plugin with your preferred plugin manager:
+
+>lua
+    -- lazy.nvim
+    {
+        "rstcruzo/http.nvim",
+        config = function()
+            require("http-nvim").setup()
+        end,
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "nvim-telescope/telescope.nvim"
+        },
+    }
+<
+
+  Note: http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. `setup()` modifies the default `http` grammar to use [this](https://github.com/rstcruzo/tree-sitter-http2) one. This grammar provides features that aren't available in the default grammar.
+
+CONFIGURATION                                      *http.nvim-configuration*
+
+Default configuration ~
+
+>lua
+    {
+        ---Http files must be stored in this directory for http.nvim to find them
+        http_dir = ".http",
+        ---File that contains the hooks to be executed before and after each request.
+        ---This file will be inside the directory defined by `http_dir`.
+        hooks_file = "hooks.lua",
+        ---File that contains each project environments available. This file will
+        ---be inside the directory defined by `http_dir`.
+        environments_file = "environments.json",
+        ---File that contains each of the projects active environment
+        active_envs_file = vim.fn.stdpath("data") .. "/http/envs.json",
+    }
+<
+
+BASIC USAGE                                                  *http.nvim-basic-usage*
+
+Create a new `.http` file inside the `.http` directory of your project (e.g. `.http/requests.http`). Write your request in the file, and run it with `:Http run_closest`.
+
+>http
+    POST https://jsonplaceholder.typicode.com/posts
+    Content-Type: application/json
+
+    {
+        "title": "foo",
+        "body": "bar",
+        "userId": 1
+    }
+<
+
+Have multiple requests in a single file by separating them with a line containing only `###`.
+
+>http
+    @request.title = Create a post
+    POST https://jsonplaceholder.typicode.com/posts
+    Content-Type: application/json
+
+    {
+        "title": "foo",
+        "body": "bar",
+        "userId": 1
+    }
+
+    ###
+
+    @request.title = Get all posts
+    GET https://jsonplaceholder.typicode.com/posts
+<
+
+Run a request from anywhere in your project with `:Http run`. Filter the requests by the `request.title`, if defined, or by the request start line.
+
+VARIABLES                                                  *http.nvim-variables*
+
+Variables are available anywhere below the line they were declared. Variables that start with `request.` are request-scoped and are only available in the request they were declared in.
+
+Example:
+>http
+    @request.title = Create a post
+    @userId = 1
+    POST https://jsonplaceholder.typicode.com/posts
+    Content-Type: application/json
+
+    {
+        "title": "foo",
+        "body": "bar",
+        "userId": {{userId}}
+    }
+<
+
+RESERVED REQUEST-SCOPED VARIABLES ~
+
+>vim
+    request.title       The title of the request. Generally used to search and run the request directly.
+    request.after_hook  The hook function name to run after the request completes.
+    request.before_hook The hook function name to run before the request completes.
+<
+
+HOOKS                                                        *http.nvim-hooks*
+
+Hooks are declared in a separate Lua file, for easier maintenance and reuse. Enter the hooks file with `:Http open_hooks` and declare your hooks in the file. It's required for you to return the functions you want to use as hooks.
+
+>lua
+    local show_result = require("http-nvim.hooks_utils").show
+    local update_env = require("http-nvim.hooks_utils").update_env
+
+    local function ask_for_confirmation(request, start_request)
+        local confirmation =
+            vim.fn.input("Are you sure you want to run this request? [y/N] ")
+
+        if confirmation == "y" or confirmation == "Y" then
+            start_request()
+        end
+    end
+
+    local function save_access_token(request, response, stdout)
+        show_result(request, response)
+
+        if response.status_code ~= 200 then
+            return
+        end
+
+        update_env({
+            access_token = response.body.access_token,
+            refresh_token = response.body.refresh_token,
+        })
+    end
+
+    return {
+        save_access_token = save_access_token,
+        ask_for_confirmation = ask_for_confirmation,
+    }
+<
+
+>http
+    @request.title = Login
+    @request.before_hook = ask_for_confirmation
+    @request.after_hook = save_access_token
+    POST {{api_url}}/login
+    Content-Type: application/json
+
+    {
+        "username": "{{username}}",
+        "password": "{{password}}"
+    }
+<
+
+The above, once the `Login` request is run, will ask for confirmation and then update the environment with the access and refresh token if a 200 status code is returned.
+
+Hooks signature ~
+
+`before_hook` has the following signature:
+>lua
+    function(request: http.Request, run_request: function(): nil): nil
+<
+
+`after_hook` has the following signature:
+>lua
+    function(request: http.Request, response: http.Response, stdout: string): nil
+<
+
+where `http.Request` and `http.Response` are defined as:
+>lua
+    ---@class http.Request
+    ---@field method string
+    ---@field url string
+    ---@field query string?
+    ---@field node TSNode
+    ---@field local_context table
+    ---@field source http.Source
+
+    ---@class http.Response
+    ---@field ok boolean
+    ---@field status_code number
+    ---@field status_line string
+    ---@field headers table
+    ---@field body table
+    ---@field total_time number?
+<
+
+Hooks utils ~
+
+You can require a module called `http-nvim.hooks_utils` to use the functions provided by http.nvim in your hooks. The available functions are:
+
+- `show(request, response, output)`: Show the response.
+- `update_env(override_variables)`: Update the current environment with the given variables.
+- `run_request(title, override_variables)`: Run the request with the given title and override variables.
+
+ENVIRONMENTS                                                  *http.nvim-environments*
+
+Environments hold variables that are available to all requests in the project. To create a new environment, run `:Http create_env`. A `.json` file will be opened with each environment variables. For instance, the following environments file has the `local` and `staging` environments.
+
+>json
+    {
+        "local": {
+            "password": "password123",
+            "username": "localuser",
+            "api_url": "http://localhost:3000"
+        },
+        "staging": {
+            "password": "password456",
+            "username": "staginguser",
+            "api_url": "https://staging.api.com"
+        }
+    }
+<
+
+Then, select an environment with `:Http select_env`. Now, all the variables in the environment will be available to all requests.
+
+Lualine component ~
+
+Use our Lualine component to show the active environment in your statusline.
+
+>lua
+    require("lualine").setup({
+        sections = {
+            lualine_a = { require("http-nvim").http_env_lualine_component },
+        },
+    })
+<
+
+COMMANDS                                                      *http.nvim-commands*
+
+  Command               Description
+  -------               -----------
+  :Http run_closest     Run request under cursor
+  :Http run             Search request with Telescope and run it
+  :Http inspect         Inspect variable under cursor
+  :Http jump            Search request with Telescope and jump to it
+  :Http run_last        Run last request
+  :Http select_env      Select project environment
+  :Http create_env      Create new project environment
+  :Http open_env        Open active project environment
+  :Http open_hooks      Open project hooks file
+
+HIGHLIGHTS                                                  *http.nvim-highlights*
+
+  Highlight         Description
+  ---------         -----------
+  HttpFinished      Color of the finished icon state
+  HttpRunning       Color of the running icon state
+
+vim:tw=78:ts=8:noet:ft=help:norl:

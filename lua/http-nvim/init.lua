@@ -266,8 +266,7 @@ vim.api.nvim_create_user_command("Http", http_cmd, {
 
 local M = {}
 
----@param opts? http.Opts
-M.setup = function(opts)
+M.init = function()
     local parser_config =
         require("nvim-treesitter.parsers").get_parser_configs()
     parser_config.http2 = {
@@ -286,7 +285,12 @@ M.setup = function(opts)
             http = "http",
         },
     })
+end
 
+M.init()
+
+---@param opts? http.Opts
+M.setup = function(opts)
     config.setup(opts)
 
     if has_cmp then
