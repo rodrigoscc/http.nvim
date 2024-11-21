@@ -64,13 +64,7 @@ function Http:complete_request(request, context)
     return completed_request
 end
 
----Runs a request
----@param request http.Request
----@param override_context table?
-function Http:run(request, override_context)
-    self.last_request = request
-    self.last_override_context = override_context
-
+function Http:get_aggregate_context(request)
     local source = request.source
 
     local env_context = project.get_env_variables()
@@ -83,11 +77,19 @@ function Http:run(request, override_context)
         request.local_context
     )
 
-    if override_context ~= nil then
-        context = vim.tbl_extend("force", context, override_context)
-    end
+    return context
+end
+
+---Runs a request
+---@param request http.Request
+---@param override_context table?
+function Http:run(request, override_context)
+    self.last_request = request
+    self.last_override_context = override_context
 
     local content = source:get_request_content(request)
+
+    local context = self:get_aggregate_context(request)
 
     request = self:complete_request(request, context)
     content = self:complete_content(content, context)

@@ -256,6 +256,7 @@ COMMANDS                                                      *http.nvim-command
   :Http create_env      Create new project environment
   :Http open_env        Open active project environment
   :Http open_hooks      Open project hooks file
+  :Http yank_curl       Yank the resulting curl command to clipboard
 
 HIGHLIGHTS                                                  *http.nvim-highlights*
 

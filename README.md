@@ -183,8 +183,8 @@ Then, select an environment with `:Http select_env`. Now, all the variables in t
 
 ### Commands
 
-| User Command      | Description                                  |
-| ----------------- | -------------------------------------------- |
+| User Command        | Description                                  |
+| ------------------- | -------------------------------------------- |
 | `:Http run_closest` | Run request under cursor                     |
 | `:Http run`         | Search request with Telescope and run it     |
 | `:Http inspect`     | Inspect variable under cursor                |
@@ -194,6 +194,7 @@ Then, select an environment with `:Http select_env`. Now, all the variables in t
 | `:Http create_env`  | Create new project environment               |
 | `:Http open_env`    | Open active project environment file         |
 | `:Http open_hooks`  | Open project hooks file                      |
+| `:Http yank_curl`   | Yank the resulting curl command to clipboard |
 
 ### Lualine component
 Use our Lualine component to show the active environment in your statusline.

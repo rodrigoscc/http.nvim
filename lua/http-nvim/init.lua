@@ -2,6 +2,7 @@ local http = require("http-nvim.http")
 local project = require("http-nvim.project")
 local hooks = require("http-nvim.hooks")
 local ui = require("http-nvim.ui")
+local job = require("http-nvim.job")
 local Source = require("http-nvim.source").Source
 local SourceType = require("http-nvim.source").type
 local id = require("http-nvim.requests").id
@@ -70,16 +71,7 @@ local subcommand_tbl = {
             local closest_request = source:get_closest_request_from(cursor_line)
 
             if closest_request then
-                local request_context =
-                    source:get_request_context(closest_request)
-                local env_context = project:get_env_variables()
-
-                local context = vim.tbl_extend(
-                    "force",
-                    env_context,
-                    request_context,
-                    closest_request.local_context
-                )
+                local context = http:get_aggregate_context(closest_request)
 
                 local value = context[variable_name]
 
@@ -211,6 +203,39 @@ local subcommand_tbl = {
     open_hooks = {
         impl = function(args, opts)
             hooks.open_hooks_file()
+        end,
+    },
+    yank_curl = {
+        impl = function(args, opts)
+            local cursor_line = unpack(vim.api.nvim_win_get_cursor(0))
+
+            local source = Source.new(SourceType.BUFFER, vim.fn.bufnr())
+            local closest_request = source:get_closest_request_from(cursor_line)
+
+            if closest_request == nil then
+                vim.notify("No request found under the cursor")
+                return
+            end
+
+            local request_content = source:get_request_content(closest_request)
+
+            local context = http:get_aggregate_context(closest_request)
+
+            closest_request = http:complete_request(closest_request, context)
+            request_content = http:complete_content(request_content, context)
+
+            local curl_args =
+                job.build_curl_command_args(closest_request, request_content)
+
+            curl_args = vim.iter(curl_args):map(function(arg)
+                return vim.fn.shellescape(arg)
+            end)
+
+            local curl_command_args = curl_args:join(" ")
+            local curl_command = "curl " .. curl_command_args
+
+            vim.fn.setreg("+", curl_command)
+            vim.notify("Yanked curl command to clipboard")
         end,
     },
 }

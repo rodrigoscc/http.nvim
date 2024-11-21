@@ -127,7 +127,7 @@ end
 ---Build curl command arguments to run request
 ---@param request http.Request
 ---@param content http.RequestContent
-local function build_curl_command_args(request, content)
+M.build_curl_command_args = function(request, content)
     local args = {
         "--include",
         "--location",
@@ -173,7 +173,7 @@ end
 ---@param on_exit function(job: Job, code: number, signal: number)
 ---@return Job
 M.request_to_job = function(request, content, on_exit)
-    local args = build_curl_command_args(request, content)
+    local args = M.build_curl_command_args(request, content)
 
     log.fmt_info("Running HTTP request %s", get_raw_curl_command(args))
 
