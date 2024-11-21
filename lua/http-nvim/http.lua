@@ -87,6 +87,8 @@ function Http:run(request, override_context)
     self.last_request = request
     self.last_override_context = override_context
 
+    local source = request.source
+
     local content = source:get_request_content(request)
 
     local context = self:get_aggregate_context(request)
