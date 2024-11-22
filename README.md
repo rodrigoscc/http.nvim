@@ -48,6 +48,10 @@ Install the plugin with your preferred plugin manager:
 
 > [!NOTE]
 >
+> If the custom grammar is ever updated, you can run `:Http update_grammar_queries` to also update the queries.
+
+> [!NOTE]
+>
 > http.nvim will format any JSON response if `jq` is installed.
 
 ## Usage
