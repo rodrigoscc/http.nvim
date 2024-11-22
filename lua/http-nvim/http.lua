@@ -89,6 +89,10 @@ function Http:run(request, override_context)
 
     local source = request.source
 
+    if not source:verify_tree() then
+        return
+    end
+
     local content = source:get_request_content(request)
 
     local context = self:get_aggregate_context(request)

@@ -80,6 +80,25 @@ function Source:get_tree()
         return nil
     end
 
+    return tree
+end
+
+function Source:verify_tree()
+    local parser = self:get_parser()
+    local tree = parser:parse()[1]
+
+    if tree == nil then
+        vim.notify(
+            "Tree-sitter tree not found in "
+                .. self.type
+                .. " "
+                .. self.route
+                .. ": please fix that before continuing!",
+            vim.log.levels.ERROR
+        )
+        return false
+    end
+
     local root_node = tree:root()
     if root_node:has_error() then
         vim.notify(
@@ -90,10 +109,10 @@ function Source:get_tree()
                 .. ": please fix them before continuing!",
             vim.log.levels.ERROR
         )
-        return nil
+        return false
     end
 
-    return tree
+    return true
 end
 
 function Source:get_buffer_requests()
