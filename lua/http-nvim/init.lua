@@ -238,6 +238,11 @@ local subcommand_tbl = {
             vim.notify("Yanked curl command to clipboard")
         end,
     },
+    update_grammar_queries = {
+        impl = function(args, opts)
+            require("http-nvim.queries").update_grammar_queries()
+        end,
+    },
 }
 
 ---@param opts table :h lua-guide-commands-create
