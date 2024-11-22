@@ -109,6 +109,7 @@ Content-Type: application/json
 | `request.title`       | The title of the request. Generally used to search and run the request directly. |
 | `request.after_hook`  | The hook function name to run after the request completes.                       |
 | `request.before_hook` | The hook function name to run before the request completes.                      |
+| `request.flags`       | Additional flags to include in the generated curl command.                       |
 
 
 ### Hooks
@@ -183,18 +184,18 @@ Then, select an environment with `:Http select_env`. Now, all the variables in t
 
 ### Commands
 
-| User Command        | Description                                  |
-| ------------------- | -------------------------------------------- |
-| `:Http run_closest` | Run request under cursor                     |
-| `:Http run`         | Search request with Telescope and run it     |
-| `:Http inspect`     | Inspect variable under cursor                |
-| `:Http jump`        | Search request with Telescope and jump to it |
-| `:Http run_last`    | Run last request                             |
-| `:Http select_env`  | Select project environment                   |
-| `:Http create_env`  | Create new project environment               |
-| `:Http open_env`    | Open active project environment file         |
-| `:Http open_hooks`  | Open project hooks file                      |
-| `:Http yank_curl`   | Yank the resulting curl command to clipboard |
+| User Command        | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `:Http run_closest` | Run request under cursor                      |
+| `:Http run`         | Search request with Telescope and run it      |
+| `:Http inspect`     | Inspect variable under cursor                 |
+| `:Http jump`        | Search request with Telescope and jump to it  |
+| `:Http run_last`    | Run last request                              |
+| `:Http select_env`  | Select project environment                    |
+| `:Http create_env`  | Create new project environment                |
+| `:Http open_env`    | Open active project environment file          |
+| `:Http open_hooks`  | Open project hooks file                       |
+| `:Http yank_curl`   | Yank the actual curl command to the clipboard |
 
 ### Lualine component
 Use our Lualine component to show the active environment in your statusline.
