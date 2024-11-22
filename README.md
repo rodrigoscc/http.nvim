@@ -32,7 +32,7 @@ Install the plugin with your preferred plugin manager:
     "rstcruzo/http.nvim",
     config = function()
         require("http-nvim").setup()
-        -- Run `:TSInstall http` after the setup is run for the first time and
+        -- Run `:TSInstall http` after the plugin is loaded for the first time and
         -- reinstall the grammar if prompted.
     end,
     dependencies = {
