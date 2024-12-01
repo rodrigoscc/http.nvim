@@ -42,7 +42,9 @@ end
 
 local function body_to_lines(response, file_type)
     if file_type == "json" then
-        return vim.split(vim.fn.json_encode(response.body), "\n")
+        local json_body = vim.fn.json_encode(response.body)
+        local formatted_body = utils.format_if_jq_installed(json_body)
+        return vim.split(formatted_body, "\n")
     end
 
     return vim.split(response.body, "\n")
@@ -91,8 +93,6 @@ local function show_response(request, response)
     vim.cmd([[vsplit]])
 
     vim.api.nvim_set_current_buf(buf)
-
-    vim.cmd([[silent exe "normal gq%"]])
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = true })
 
@@ -148,7 +148,7 @@ M.set_request_state = function(request, state)
     local icon = Icons[state]
     local highlight = Highlights[state]
 
-    local extmark_id = request_line
+    local extmark_id = request_line + 1 -- +1 to avoid passing 0, it errors out
 
     local bufnr = request.source.route
     ---@cast bufnr integer
