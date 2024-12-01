@@ -111,7 +111,8 @@ local subcommand_tbl = {
                         local run_selected_request = function()
                             actions.close(prompt_bufnr)
 
-                            local selection = actions.state.get_selected_entry()
+                            local selection =
+                                require("telescope.actions.state").get_selected_entry()
 
                             http:run(selection.request)
                         end
