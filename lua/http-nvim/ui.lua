@@ -77,8 +77,6 @@ local function show_response(request, response)
 
     vim.api.nvim_set_current_buf(buf)
 
-    vim.cmd([[silent exe "normal gq%"]])
-
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = true })
 
     vim.opt_local.winbar = winbar .. " (1/2)"
@@ -112,7 +110,7 @@ local function show_raw_output(request, stderr)
 end
 
 M.show = function(request, response, output)
-    if response then
+    if response ~= nil then
         show_response(request, response)
     else
         show_raw_output(request, output)
