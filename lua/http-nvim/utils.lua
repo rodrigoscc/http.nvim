@@ -21,9 +21,8 @@ end
 
 M.format_if_jq_installed = function(json)
     if vim.fn.executable("jq") == 1 then
-        return vim.fn.system(
-            "jq --sort-keys --indent 4 '.' <<< '" .. json .. "'"
-        )
+        json = vim.fn.shellescape(json)
+        return vim.fn.system("jq --sort-keys --indent 4 '.' <<< " .. json)
     else
         return json
     end
