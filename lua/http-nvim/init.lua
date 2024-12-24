@@ -194,6 +194,10 @@ local subcommand_tbl = {
                 telescope_run(requests)
             elseif has_fzf_lua then
                 fzf_lua_run(requests)
+            else
+                error(
+                    "Either nvim-telescope/telescope.nvim or ibhagwan/fzf-lua are required to run this command"
+                )
             end
         end,
     },
@@ -205,6 +209,10 @@ local subcommand_tbl = {
                 telescope_jump(requests)
             elseif has_fzf_lua then
                 fzf_lua_jump(requests)
+            else
+                error(
+                    "Either nvim-telescope/telescope.nvim or ibhagwan/fzf-lua are required to run this command"
+                )
             end
         end,
     },
