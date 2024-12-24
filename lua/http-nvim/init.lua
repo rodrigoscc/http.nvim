@@ -88,12 +88,21 @@ local function telescope_jump(requests)
         :find()
 end
 
+local function fzf_lua_entry_maker(request)
+    local fzf_lua = require("fzf-lua")
+    local line, _, _ = request.node:start()
+    return request.source.route .. ":" .. fzf_lua.utils.ansi_codes.magenta(
+        string.format("%d", line)
+    ) .. ":" .. fzf_lua.utils.ansi_codes.blue(id(request)),
+        request.source.route .. ":" .. line .. ":" .. id(request)
+end
+
 local function fzf_lua_jump(requests)
     local fzf_lua = require("fzf-lua")
 
     local entries = vim.tbl_map(function(request)
-        local line, _, _ = request.node:start()
-        return request.source.route .. ":" .. line .. ":" .. id(request)
+        local entry, _ = fzf_lua_entry_maker(request)
+        return entry
     end, requests)
 
     fzf_lua.fzf_exec(entries, {
@@ -108,9 +117,9 @@ local function fzf_lua_run(requests)
     local entries_to_request = {}
 
     local entries = vim.tbl_map(function(request)
-        local line, _, _ = request.node:start()
-        local entry = request.source.route .. ":" .. line .. ":" .. id(request)
-        entries_to_request[entry] = request
+        local entry, clean_line = fzf_lua_entry_maker(request)
+        -- Store entry line without ansi codes because that's what the action will receive
+        entries_to_request[clean_line] = request
         return entry
     end, requests)
 
