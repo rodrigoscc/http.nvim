@@ -13,14 +13,117 @@ local has_cmp, cmp = pcall(require, "cmp")
 local http_cmp_source = require("http-nvim.cmp_source")
 
 local has_telescope = pcall(require, "telescope")
-if not has_telescope then
-    error("This plugins requires nvim-telescope/telescope.nvim")
+local has_fzf_lua = pcall(require, "fzf-lua")
+
+local function telescope_run(requests)
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local actions = require("telescope.actions")
+
+    pickers
+        .new({}, {
+            prompt_title = "Run HTTP request",
+            finder = finders.new_table({
+                results = requests,
+                entry_maker = function(request)
+                    local line, _, _ = request.node:start()
+
+                    return {
+                        value = id(request),
+                        ordinal = id(request),
+                        display = id(request),
+                        filename = request.source.route,
+                        lnum = line + 1,
+                        request = request,
+                    }
+                end,
+            }),
+            previewer = conf.grep_previewer({}),
+            sorter = conf.generic_sorter({}),
+            attach_mappings = function(prompt_bufnr, map)
+                local run_selected_request = function()
+                    actions.close(prompt_bufnr)
+
+                    local selection =
+                        require("telescope.actions.state").get_selected_entry()
+
+                    http:run(selection.request)
+                end
+
+                map("i", "<CR>", run_selected_request)
+                map("n", "<CR>", run_selected_request)
+
+                return true
+            end,
+        })
+        :find()
 end
 
-local pickers = require("telescope.pickers")
-local finders = require("telescope.finders")
-local conf = require("telescope.config").values
-local actions = require("telescope.actions")
+local function telescope_jump(requests)
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+
+    pickers
+        .new({}, {
+            prompt_title = "Jump to HTTP request",
+            finder = finders.new_table({
+                results = requests,
+                entry_maker = function(request)
+                    local line, _, _ = request.node:start()
+
+                    return {
+                        value = id(request),
+                        ordinal = id(request),
+                        display = id(request),
+                        filename = request.source.route,
+                        lnum = line + 1,
+                    }
+                end,
+            }),
+            previewer = conf.grep_previewer({}),
+            sorter = conf.generic_sorter({}),
+        })
+        :find()
+end
+
+local function fzf_lua_jump(requests)
+    local fzf_lua = require("fzf-lua")
+
+    local entries = vim.tbl_map(function(request)
+        local line, _, _ = request.node:start()
+        return request.source.route .. ":" .. line .. ":" .. id(request)
+    end, requests)
+
+    fzf_lua.fzf_exec(entries, {
+        actions = fzf_lua.defaults.actions.files,
+        previewer = "builtin",
+    })
+end
+
+local function fzf_lua_run(requests)
+    local fzf_lua = require("fzf-lua")
+
+    local entries_to_request = {}
+
+    local entries = vim.tbl_map(function(request)
+        local line, _, _ = request.node:start()
+        local entry = request.source.route .. ":" .. line .. ":" .. id(request)
+        entries_to_request[entry] = request
+        return entry
+    end, requests)
+
+    fzf_lua.fzf_exec(entries, {
+        actions = {
+            default = function(selected)
+                local request = entries_to_request[selected[1]]
+                http:run(request)
+            end,
+        },
+        previewer = "builtin",
+    })
+end
 
 local function get_variable_name_under_cursor()
     local node = vim.treesitter.get_node()
@@ -87,70 +190,22 @@ local subcommand_tbl = {
         impl = function(args, opts)
             local requests = project.get_requests()
 
-            pickers
-                .new({}, {
-                    prompt_title = "Run HTTP request",
-                    finder = finders.new_table({
-                        results = requests,
-                        entry_maker = function(request)
-                            local line, _, _ = request.node:start()
-
-                            return {
-                                value = id(request),
-                                ordinal = id(request),
-                                display = id(request),
-                                filename = request.source.route,
-                                lnum = line + 1,
-                                request = request,
-                            }
-                        end,
-                    }),
-                    previewer = conf.grep_previewer({}),
-                    sorter = conf.generic_sorter({}),
-                    attach_mappings = function(prompt_bufnr, map)
-                        local run_selected_request = function()
-                            actions.close(prompt_bufnr)
-
-                            local selection =
-                                require("telescope.actions.state").get_selected_entry()
-
-                            http:run(selection.request)
-                        end
-
-                        map("i", "<CR>", run_selected_request)
-                        map("n", "<CR>", run_selected_request)
-
-                        return true
-                    end,
-                })
-                :find()
+            if has_telescope then
+                telescope_run(requests)
+            elseif has_fzf_lua then
+                fzf_lua_run(requests)
+            end
         end,
     },
     jump = {
         impl = function(args, opts)
             local requests = project.get_requests()
 
-            pickers
-                .new({}, {
-                    prompt_title = "Jump to HTTP request",
-                    finder = finders.new_table({
-                        results = requests,
-                        entry_maker = function(request)
-                            local line, _, _ = request.node:start()
-
-                            return {
-                                value = id(request),
-                                ordinal = id(request),
-                                display = id(request),
-                                filename = request.source.route,
-                                lnum = line + 1,
-                            }
-                        end,
-                    }),
-                    previewer = conf.grep_previewer({}),
-                    sorter = conf.generic_sorter({}),
-                })
-                :find()
+            if has_telescope then
+                telescope_jump(requests)
+            elseif has_fzf_lua then
+                fzf_lua_jump(requests)
+            end
         end,
     },
     run_last = {
