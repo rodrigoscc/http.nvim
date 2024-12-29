@@ -121,16 +121,19 @@ end
 local State = {
     Running = "running",
     Finished = "finished",
+    Error = "error",
 }
 
 local Icons = {
-    [State.Running] = "󰦖",
-    [State.Finished] = "󰄳",
+    [State.Running] = "󰄰",
+    [State.Finished] = "󰪥",
+    [State.Error] = "󰪥",
 }
 
 local Highlights = {
     [State.Running] = config.highlights.running,
     [State.Finished] = config.highlights.finished,
+    [State.Error] = config.highlights.error,
 }
 
 ---Set the request state

@@ -27,6 +27,7 @@ local function define_highlights()
     vim.cmd([[
     highlight default HttpFinished ctermfg=Green guifg=#96F291
     highlight default HttpRunning ctermfg=Yellow guifg=#FFEC63
+    highlight default HttpError ctermfg=Red guifg=#EB6F92
     ]])
 end
 
@@ -54,6 +55,7 @@ end
 M.highlights = {
     finished = "HttpFinished",
     running = "HttpRunning",
+    error = "HttpError",
 }
 
 return M

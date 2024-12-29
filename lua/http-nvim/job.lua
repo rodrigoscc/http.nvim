@@ -196,17 +196,23 @@ M.on_exit_func = function(request, after_hook)
         vim.list_extend(stdout, stderr)
 
         local response = nil
+        local status_ok = code == 0
 
-        if code == 0 then
+        ---@type http.RequestState
+        local state = "error"
+
+        if status_ok then
             local status, result = xpcall(parse_response, error_handler, job)
 
             if status then
                 response = result
             end
+
+            state = "finished"
         end
 
         vim.schedule(function()
-            ui.set_request_state(request, "finished")
+            ui.set_request_state(request, state)
         end)
 
         if after_hook == nil then
