@@ -3,7 +3,7 @@ local Job = require("plenary.job")
 local M = {}
 
 local grammar_repo_url = "https://github.com/rstcruzo/tree-sitter-http2"
-local grammar_repo_revision = "1c12a93bae8359c68345e94be7563c2b533159b1"
+local grammar_repo_revision = "82bca7f0d12a850da674b339be79b77fd7303b88"
 
 local function clone_grammar_repo(path, callback)
     local job = Job:new({
