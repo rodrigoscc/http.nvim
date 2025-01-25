@@ -8,8 +8,8 @@
 
 ## Features
 - Store multiple requests in a `.http` file
-- Search project requests with Telescope
-- Run project requests with Telescope
+- Search project requests with Telescope or fzf-lua
+- Run project requests with Telescope or fzf-lua
 - Manage multiple environments per project
 - Declare global or request-scoped variables in the `.http` file
 - Run last request run for easier API development iteration
@@ -34,23 +34,20 @@ Install the plugin with your preferred plugin manager:
     "rstcruzo/http.nvim",
     config = function()
         require("http-nvim").setup()
-        -- Run `:TSInstall http` after the plugin is loaded for the first time and
-        -- reinstall the grammar if prompted.
     end,
+    build = {":TSUpdate http2", ":Http update_grammar_queries"},
     dependencies = {
         "nvim-lua/plenary.nvim",
-        "nvim-telescope/telescope.nvim"
+        "nvim-treesitter/nvim-treesitter",
+        "nvim-telescope/telescope.nvim", -- optional: uses it as picker
+        "ibhagwan/fzf-lua" -- optional: uses it as picker
     },
 }
 ```
 
 > [!NOTE]
 >
-> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. When loading this plugin the default `http` grammar is replaced with [this](https://github.com/rstcruzo/tree-sitter-http2) one. This grammar provides features that aren't available in the default grammar.
-
-> [!NOTE]
->
-> If the custom grammar is ever updated, you can run `:Http update_grammar_queries` to also update the queries.
+> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. When loading this plugin the default `http` grammar is replaced with [this](https://github.com/rstcruzo/tree-sitter-http2). This grammar provides features that aren't available in the default grammar.
 
 > [!NOTE]
 >
