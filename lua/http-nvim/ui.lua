@@ -69,9 +69,12 @@ local function show_response(request, response)
     local header_lines =
         headers_to_lines(response.status_line, response.headers)
 
+    local body_file_type = utils.get_body_file_type(response.headers)
+    local body_lines = body_to_lines(response, body_file_type)
+
     local buf = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_set_option_value("filetype", "http", { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, header_lines)
+    vim.api.nvim_set_option_value("filetype", "http", { buf = buf })
 
     vim.cmd([[15split]])
 
@@ -81,12 +84,10 @@ local function show_response(request, response)
 
     vim.opt_local.winbar = winbar .. " (1/2)"
 
-    local body_file_type = utils.get_body_file_type(response.headers)
-    local body_lines = body_to_lines(response, body_file_type)
-
     buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, true, body_lines)
+    -- Set filetype after adding lines for better performance with large bodies.
     vim.api.nvim_set_option_value("filetype", body_file_type, { buf = buf })
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, body_lines)
 
     vim.cmd([[vsplit]])
 
