@@ -127,11 +127,13 @@ function Source:get_buffer_requests()
 
     local above_local_context = {}
 
-    for _, match in queries.requests_query:iter_matches(tree:root(), self.repr) do
+    local requests_query = queries.requests_query()
+
+    for _, match in requests_query:iter_matches(tree:root(), self.repr) do
         local variable = nil
 
         for id, node in pairs(match) do
-            local capture_name = queries.requests_query.captures[id]
+            local capture_name = requests_query.captures[id]
             local capture_value =
                 vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
@@ -187,11 +189,13 @@ function Source:get_file_requests()
 
     local above_local_context = {}
 
-    for _, match in queries.requests_query:iter_matches(tree:root(), self.repr) do
+    local requests_query = queries.requests_query()
+
+    for _, match in requests_query:iter_matches(tree:root(), self.repr) do
         local variable = nil
 
         for id, node in pairs(match) do
-            local capture_name = queries.requests_query.captures[id]
+            local capture_name = requests_query.captures[id]
             local capture_value =
                 vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
@@ -318,14 +322,16 @@ function Source:get_request_context(request)
 
     local context = {}
 
+    local variables_query = queries.variables_query()
+
     for _, match in
-        queries.variables_query:iter_matches(tree:root(), self.repr, 0, stop)
+        variables_query:iter_matches(tree:root(), self.repr, 0, stop)
     do
         ---@type http.Variable
         local variable = { name = "", value = "" }
 
         for id, node in pairs(match) do
-            local capture_name = queries.variables_query.captures[id]
+            local capture_name = variables_query.captures[id]
             local capture_value =
                 vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
