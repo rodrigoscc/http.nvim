@@ -11,14 +11,20 @@ local function parse_http_headers_lines(headers_lines)
         local is_a_header_line = not vim.startswith(header_line, "HTTP/")
 
         if is_a_header_line then
-            local name, value = unpack(vim.split(header_line, ":"))
+            local colon_pos = string.find(header_line, ":")
 
-            name = vim.trim(name)
-            value = vim.trim(value)
+            if colon_pos ~= nil then
+                local name = string.sub(header_line, 1, colon_pos - 1)
+                local value = string.sub(header_line, colon_pos + 1)
 
-            -- NOTE: Header lines lacking ": " will have a value of nil, therefore
-            -- will be ignored (header[name) = nil).
-            parsed_headers[name] = value
+                name = vim.trim(name)
+                value = vim.trim(value)
+
+                parsed_headers[name] = value
+            else
+                local name = vim.trim(header_line)
+                parsed_headers[name] = ""
+            end
         end
     end
 
