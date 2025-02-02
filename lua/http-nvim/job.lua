@@ -163,8 +163,8 @@ end
 
 M.on_exit_func = function(request, after_hook)
     return function(obj)
-        local stdout = vim.split(obj.stdout, "\n")
-        local stderr = vim.split(obj.stderr, "\n")
+        local stdout = vim.split(obj.stdout, "\n", { trimempty = true })
+        local stderr = vim.split(obj.stderr, "\n", { trimempty = true })
         local output = vim.list_extend(stdout, stderr)
 
         local response = nil
