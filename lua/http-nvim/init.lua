@@ -90,7 +90,10 @@ end
 
 local function fzf_lua_entry_maker(request)
     local fzf_lua = require("fzf-lua")
-    local line, _, _ = request.node:start()
+    local node_start, _, _ = request.node:start()
+
+    local line = node_start + 1
+
     return request.source.route .. ":" .. fzf_lua.utils.ansi_codes.magenta(
         string.format("%d", line)
     ) .. ":" .. fzf_lua.utils.ansi_codes.blue(id(request)),
