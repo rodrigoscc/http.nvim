@@ -1,6 +1,6 @@
 # 🌐 http.nvim
 
-![Run tests badge](https://github.com/rstcruzo/http.nvim/actions/workflows/tests.yml/badge.svg)
+![Run tests badge](https://github.com/rodrigoscc/http.nvim/actions/workflows/tests.yml/badge.svg)
 
 `http.nvim` lets you run HTTP requests from Neovim, manage environments and run hooks before and after each request.
 
@@ -31,7 +31,7 @@ Install the plugin with your preferred plugin manager:
 ```lua
 -- lazy.nvim
 {
-    "rstcruzo/http.nvim",
+    "rodrigoscc/http.nvim",
     config = function()
         require("http-nvim").setup()
     end,
@@ -47,7 +47,7 @@ Install the plugin with your preferred plugin manager:
 
 > [!NOTE]
 >
-> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. When loading this plugin the default `http` grammar is replaced with [this](https://github.com/rstcruzo/tree-sitter-http2). This grammar provides features that aren't available in the default grammar.
+> http.nvim uses a Tree-sitter grammar that is not yet included in nvim-treesitter. When loading this plugin the default `http` grammar is replaced with [this](https://github.com/rodrigoscc/tree-sitter-http2). This grammar provides features that aren't available in the default grammar.
 
 > [!NOTE]
 >

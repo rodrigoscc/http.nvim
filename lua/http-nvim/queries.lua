@@ -1,6 +1,6 @@
 local M = {}
 
-local grammar_repo_url = "https://github.com/rstcruzo/tree-sitter-http2"
+local grammar_repo_url = "https://github.com/rodrigoscc/tree-sitter-http2"
 local grammar_repo_revision = "82bca7f0d12a850da674b339be79b77fd7303b88"
 
 local function clone_grammar_repo(path, callback)

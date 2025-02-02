@@ -2,7 +2,7 @@ rockspec_format = "3.0"
 package = "http.nvim"
 version = "scm-1"
 source = {
-	url = "git+https://github.com/rstcruzo/http.nvim",
+	url = "git+https://github.com/rodrigoscc/http.nvim",
 }
 dependencies = {
 	"plenary.nvim",
