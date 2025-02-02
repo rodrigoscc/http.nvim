@@ -1,7 +1,6 @@
 local queries = require("http-nvim.queries")
 
-local open = require("plenary.context_manager").open
-local with = require("plenary.context_manager").with
+local fs = require("http-nvim.fs")
 local tree_sitter_nodes = require("http-nvim.constants").tree_sitter_nodes
 
 local function extract_method_and_url(method_url)
@@ -50,9 +49,7 @@ function Source.new(type, repr)
 
     if type == source_type.FILE then
         route = repr
-        repr = with(open(repr, "r"), function(reader)
-            return reader:read("*a")
-        end)
+        repr = fs.read_file(repr)
     end
 
     local obj = setmetatable({

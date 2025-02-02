@@ -1,5 +1,3 @@
-local Path = require("plenary.path")
-
 local M = {}
 
 ---@class http.Opts
@@ -37,19 +35,19 @@ M.setup = function(opts)
     M.options = vim.tbl_deep_extend("force", defaults, opts or {})
 end
 
----@return Path
+---@return string
 M.get_project_envs_path = function()
-    return Path:new(M.options.http_dir, M.options.environments_file)
+    return vim.fs.joinpath(M.options.http_dir, M.options.environments_file)
 end
 
 M.open_project_envs_file = function()
     local project_envs_path = M.get_project_envs_path()
-    vim.cmd("split " .. project_envs_path:absolute())
+    vim.cmd("split " .. project_envs_path)
 end
 
----@return Path
+---@return string
 M.get_hooks_path = function()
-    return Path:new(M.options.http_dir, M.options.hooks_file)
+    return vim.fs.joinpath(M.options.http_dir, M.options.hooks_file)
 end
 
 M.highlights = {

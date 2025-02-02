@@ -4,8 +4,7 @@ local config = require("http-nvim.config")
 local env = require("http-nvim.env")
 local utils = require("http-nvim.utils")
 
-local open = require("plenary.context_manager").open
-local with = require("plenary.context_manager").with
+local fs = require("http-nvim.fs")
 
 local M = {}
 
@@ -29,16 +28,15 @@ end
 M.get_existing_envs = function()
     local env_file_path = config.get_project_envs_path()
 
-    if vim.fn.findfile(env_file_path:absolute()) == "" then
+    if not fs.file_exists(env_file_path) then
         return {}
     end
 
-    local envs_file_contents = with(
-        open(env_file_path:absolute(), "r"),
-        function(reader)
-            return reader:read("*a")
-        end
-    )
+    local envs_file_contents = fs.read_file(env_file_path)
+
+    if envs_file_contents == "" then
+        return {}
+    end
 
     return vim.json.decode(envs_file_contents) or {}
 end
@@ -81,17 +79,14 @@ M.update_active_env = function(override_variables)
 
     local project_envs_path = config.get_project_envs_path()
 
-    utils.make_sure_file_exists(project_envs_path:absolute())
-
-    with(open(project_envs_path:absolute(), "w+"), function(file)
-        file:write(updated_envs)
-    end)
+    fs.touch_file(project_envs_path)
+    fs.write_file(project_envs_path, updated_envs)
 end
 
 M.create_env = function(new_env)
     local project_envs_path = config.get_project_envs_path()
 
-    utils.make_sure_file_exists(project_envs_path:absolute())
+    fs.touch_file(project_envs_path)
 
     local envs = M.get_existing_envs()
 
@@ -102,9 +97,7 @@ M.create_env = function(new_env)
     new_envs_file_contents =
         utils.format_if_jq_installed(new_envs_file_contents)
 
-    with(open(project_envs_path:absolute(), "w+"), function(file)
-        file:write(new_envs_file_contents)
-    end)
+    fs.write_file(project_envs_path, new_envs_file_contents)
 
     M.open_env(new_env)
     M.select_env(new_env)
@@ -116,19 +109,17 @@ M.open_env = function(e)
 end
 
 M.select_env = function(e)
-    utils.make_sure_file_exists(config.options.active_envs_file)
+    fs.touch_file(config.options.active_envs_file)
 
     local active_envs = env.get_all_active_envs()
 
     active_envs[vim.fn.getcwd()] = e
 
-    with(open(config.options.active_envs_file, "w+"), function(file)
-        local envs_file_updated = vim.json.encode(active_envs)
+    local envs_file_updated = vim.json.encode(active_envs)
 
-        envs_file_updated = utils.format_if_jq_installed(envs_file_updated)
+    envs_file_updated = utils.format_if_jq_installed(envs_file_updated)
 
-        file:write(envs_file_updated)
-    end)
+    fs.write_file(config.options.active_envs_file, envs_file_updated)
 end
 
 return M

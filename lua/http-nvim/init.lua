@@ -298,7 +298,7 @@ local subcommand_tbl = {
             request_content = http:complete_content(request_content, context)
 
             local curl_args =
-                job.build_curl_command_args(closest_request, request_content)
+                job.build_curl_command(closest_request, request_content)
 
             curl_args = vim.iter(curl_args):map(function(arg)
                 return vim.fn.shellescape(arg)

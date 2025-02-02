@@ -1,4 +1,3 @@
-local Job = require("plenary.job")
 local ui = require("http-nvim.ui")
 local utils = require("http-nvim.utils")
 local url = require("http-nvim.requests").url
@@ -61,13 +60,11 @@ local function split_header_and_body(result)
     return vim.list_slice(result, 0, #result - 2), {}, total_time
 end
 
----Parse job result and get http response from it
----@param job Job
+---Parse vim.system() result and get http response from it
+---@param output string[]
 ---@return http.Response
-local function parse_response(job)
-    local result = job:result()
-
-    local headers_lines, body_lines, total_time = split_header_and_body(result)
+local function parse_response(output)
+    local headers_lines, body_lines, total_time = split_header_and_body(output)
 
     local status_line = parse_status_line(headers_lines)
     local parsed_headers = parse_http_headers_lines(headers_lines)
@@ -83,7 +80,7 @@ local function parse_response(job)
         parsed_body = body_joined
     end
 
-    local parsed_status_code = parse_status_code(result[1])
+    local parsed_status_code = parse_status_code(output[1])
 
     ---@type http.Response
     local response = {
@@ -110,25 +107,12 @@ local function get_additional_args(request)
     return {}
 end
 
-local function get_raw_curl_command(args)
-    local escaped_args = vim.iter(args):map(function(arg)
-        local is_flag = vim.startswith(arg, "-")
-
-        if not is_flag then
-            return vim.fn.shellescape(arg)
-        end
-
-        return arg
-    end)
-
-    return "curl " .. table.concat(escaped_args:totable(), " ")
-end
-
 ---Build curl command arguments to run request
 ---@param request http.Request
 ---@param content http.RequestContent
-M.build_curl_command_args = function(request, content)
-    local args = {
+M.build_curl_command = function(request, content)
+    local command = {
+        "curl",
         "--include",
         "--location",
         "--no-progress-meter",
@@ -145,43 +129,26 @@ M.build_curl_command_args = function(request, content)
             body = minify_json(body)
         end
 
-        table.insert(args, "--data")
-        table.insert(args, body)
+        table.insert(command, "--data")
+        table.insert(command, body)
     end
 
     if content.headers ~= nil then
         for _, header in ipairs(content.headers) do
-            table.insert(args, "--header")
-            table.insert(args, header)
+            table.insert(command, "--header")
+            table.insert(command, header)
         end
     end
 
-    table.insert(args, "--request")
-    table.insert(args, request.method)
+    table.insert(command, "--request")
+    table.insert(command, request.method)
 
-    table.insert(args, url(request))
+    table.insert(command, url(request))
 
     local additional_args = get_additional_args(request)
-    vim.list_extend(args, additional_args)
+    vim.list_extend(command, additional_args)
 
-    return args
-end
-
----Create a plenary job to run request
----@param request http.Request
----@param content http.RequestContent
----@param on_exit function(job: Job, code: number, signal: number)
----@return Job
-M.request_to_job = function(request, content, on_exit)
-    local args = M.build_curl_command_args(request, content)
-
-    log.fmt_info("Running HTTP request %s", get_raw_curl_command(args))
-
-    return Job:new({
-        command = "curl",
-        args = args,
-        on_exit = on_exit,
-    })
+    return command
 end
 
 local function error_handler(err)
@@ -189,20 +156,19 @@ local function error_handler(err)
 end
 
 M.on_exit_func = function(request, after_hook)
-    return function(job, code)
-        local stdout = job:result()
-        local stderr = job:stderr_result()
-
-        vim.list_extend(stdout, stderr)
+    return function(obj)
+        local stdout = vim.split(obj.stdout, "\n")
+        local stderr = vim.split(obj.stderr, "\n")
+        local output = vim.list_extend(stdout, stderr)
 
         local response = nil
-        local status_ok = code == 0
+        local status_ok = obj.code == 0
 
         ---@type http.RequestState
         local state = "error"
 
         if status_ok then
-            local status, result = xpcall(parse_response, error_handler, job)
+            local status, result = xpcall(parse_response, error_handler, output)
 
             if status then
                 response = result
@@ -217,10 +183,10 @@ M.on_exit_func = function(request, after_hook)
 
         if after_hook == nil then
             vim.schedule(function()
-                ui.show(request, response, stdout)
+                ui.show(request, response, output)
             end)
         else
-            after_hook(request, response, stdout)
+            after_hook(request, response, output)
         end
     end
 end

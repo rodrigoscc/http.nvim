@@ -106,15 +106,13 @@ function Http:run(request, override_context)
     )
 
     local start_request = function()
-        local request_job = job.request_to_job(
-            request,
-            content,
-            job.on_exit_func(request, after_hook)
-        )
-
         ui.set_request_state(request, "running")
 
-        request_job:start()
+        vim.system(
+            job.build_curl_command(request, content),
+            { text = true },
+            job.on_exit_func(request, after_hook)
+        )
     end
 
     if before_hook ~= nil then
