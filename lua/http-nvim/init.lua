@@ -300,17 +300,21 @@ local subcommand_tbl = {
             closest_request = http:complete_request(closest_request, context)
             request_content = http:complete_content(request_content, context)
 
-            local curl_args =
+            local curl_command =
                 job.build_curl_command(closest_request, request_content)
 
-            curl_args = vim.iter(curl_args):map(function(arg)
-                return vim.fn.shellescape(arg)
+            curl_command = vim.iter(ipairs(curl_command)):map(function(i, part)
+                if i == 1 then
+                    -- Do not escape command name
+                    return part
+                end
+
+                return vim.fn.shellescape(part)
             end)
 
-            local curl_command_args = curl_args:join(" ")
-            local curl_command = "curl " .. curl_command_args
+            local curl_command_string = curl_command:join(" ")
 
-            vim.fn.setreg("+", curl_command)
+            vim.fn.setreg("+", curl_command_string)
             vim.notify("Yanked curl command to clipboard")
         end,
     },
