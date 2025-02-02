@@ -94,7 +94,7 @@ local function parse_response(output)
         status_line = status_line,
         body = parsed_body,
         headers = parsed_headers,
-        ok = true,
+        ok = parsed_status_code >= 200 and parsed_status_code <= 299,
         total_time = tonumber(total_time),
     }
 
