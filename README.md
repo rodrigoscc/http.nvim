@@ -4,7 +4,7 @@
 
 `http.nvim` lets you run HTTP requests from Neovim, manage environments and run hooks before and after each request.
 
-![http-nvim](https://github.com/user-attachments/assets/d20961a0-6574-4c04-8245-02878624c7a9)
+https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 
 ## Features
 - Store multiple requests in a `.http` file
