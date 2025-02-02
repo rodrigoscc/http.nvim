@@ -181,7 +181,7 @@ Hooks signature ~
 
 `after_hook` has the following signature:
 >lua
-    function(request: http.Request, response: http.Response, stdout: string): nil
+    function(request: http.Request, response: http.Response, stdout: string[]): nil
 <
 
 where `http.Request` and `http.Response` are defined as:

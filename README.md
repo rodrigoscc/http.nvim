@@ -89,6 +89,15 @@ GET https://jsonplaceholder.typicode.com/posts
 
 Run a request from anywhere in your project with `:Http run`. Filter the requests by the `request.title`, if defined, or by the request start line.
 
+### Response windows
+
+The response of the request is parsed and then displayed in a bottom split. One buffer shows the response body and other one shows the headers.
+
+| Action                          | Keymap  |
+| ------------------------------- | ------- |
+| Close Window                    | `q`     |
+| Switch between Body and Headers | `<Tab>` |
+
 ### Variables
 Variables are available anywhere below the line they were declared. Variables that start with `request.` are request-scoped and are only available in the request they were declared in.
 
