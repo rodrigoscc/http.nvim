@@ -54,17 +54,43 @@ local function sanitize_time_total(time_total)
     return math.floor(time_total * 100) / 100 -- keep two decimal places
 end
 
+---Compute the winbar for this request
+---@param request http.Request
+---@param response http.Response
+local function get_winbar(request, response)
+    local id = request_id(request)
+
+    local status_highlight = config.highlights.finished
+    if response.status_code >= 400 and response.status_code <= 599 then
+        status_highlight = config.highlights.error
+    end
+
+    local total_time = ""
+    if response.total_time then
+        total_time = "(took "
+            .. sanitize_time_total(response.total_time)
+            .. "s)"
+    end
+
+    return string.format(
+        "%%#%s#[%s]%%* %s %s",
+        status_highlight,
+        response.status_code,
+        id,
+        total_time
+    )
+end
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
 local function show_response(request, response)
-    local winbar = request_id(request)
-    if response.total_time then
-        winbar = winbar
-            .. " (took "
-            .. sanitize_time_total(response.total_time)
-            .. "s)"
-    end
+    local winbar = get_winbar(request, response)
+
+    local body_winbar = winbar
+        .. "%=%#@comment.info# Body %*%#@comment# Headers %*"
+    local headers_winbar = winbar
+        .. "%=%#@comment# Body %*%#@comment.info# Headers %*"
 
     local header_lines =
         headers_to_lines(response.status_line, response.headers)
@@ -72,30 +98,38 @@ local function show_response(request, response)
     local body_file_type = utils.get_body_file_type(response.headers)
     local body_lines = body_to_lines(response, body_file_type)
 
-    local buf = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, header_lines)
-    vim.api.nvim_set_option_value("filetype", "http", { buf = buf })
-
-    vim.cmd([[15split]])
-
-    vim.api.nvim_set_current_buf(buf)
-
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = true })
-
-    vim.opt_local.winbar = winbar .. " (1/2)"
-
-    buf = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_buf_set_lines(buf, 0, -1, true, body_lines)
+    local body_buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_lines(body_buf, 0, -1, true, body_lines)
     -- Set filetype after adding lines for better performance with large bodies.
-    vim.api.nvim_set_option_value("filetype", body_file_type, { buf = buf })
+    vim.api.nvim_set_option_value(
+        "filetype",
+        body_file_type,
+        { buf = body_buf }
+    )
 
-    vim.cmd([[vsplit]])
+    vim.cmd([[botright 15split]])
 
-    vim.api.nvim_set_current_buf(buf)
+    vim.api.nvim_set_current_buf(body_buf)
 
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = true })
+    vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
 
-    vim.opt_local.winbar = winbar .. " (2/2)"
+    vim.opt_local.winbar = winbar
+
+    local headers_buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
+    vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
+
+    vim.keymap.set("n", "<Tab>", function()
+        vim.api.nvim_set_current_buf(headers_buf)
+        vim.wo[0][headers_buf].winbar = headers_winbar
+    end, { buffer = body_buf })
+
+    vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
+    vim.keymap.set("n", "<Tab>", function()
+        vim.api.nvim_set_current_buf(body_buf)
+    end, { buffer = headers_buf })
+
+    vim.wo[0][body_buf].winbar = body_winbar
 end
 
 local function show_raw_output(request, stderr)
