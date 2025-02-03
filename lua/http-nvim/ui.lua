@@ -107,29 +107,26 @@ local function show_response(request, response)
         { buf = body_buf }
     )
 
-    vim.cmd(config.options.win_command)
-
-    vim.api.nvim_set_current_buf(body_buf)
+    local win =
+        vim.api.nvim_open_win(body_buf, false, config.options.win_config)
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
-
-    vim.opt_local.winbar = winbar
 
     local headers_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
     vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
 
     vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_set_current_buf(headers_buf)
-        vim.wo[0][headers_buf].winbar = headers_winbar
+        vim.api.nvim_win_set_buf(win, headers_buf)
+        vim.wo[win][headers_buf].winbar = headers_winbar
     end, { buffer = body_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
     vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_set_current_buf(body_buf)
+        vim.api.nvim_win_set_buf(win, body_buf)
     end, { buffer = headers_buf })
 
-    vim.wo[0][body_buf].winbar = body_winbar
+    vim.wo[win][body_buf].winbar = body_winbar
 end
 
 local function show_raw_output(request, stderr)
