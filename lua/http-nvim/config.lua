@@ -16,6 +16,9 @@ local defaults = {
     ---File that contains each of the projects active environment
     ---@type string
     active_envs_file = vim.fn.stdpath("data") .. "/http/envs.json",
+    ---Window command to create response window
+    ---@type string
+    win_command = "botright split",
 }
 
 ---@type http.Opts

@@ -107,7 +107,7 @@ local function show_response(request, response)
         { buf = body_buf }
     )
 
-    vim.cmd([[botright 15split]])
+    vim.cmd(config.options.win_command)
 
     vim.api.nvim_set_current_buf(body_buf)
 
@@ -137,7 +137,7 @@ local function show_raw_output(request, stderr)
     vim.api.nvim_set_option_value("filetype", "text", { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, stderr)
 
-    vim.cmd([[15split]])
+    vim.cmd(config.options.win_command)
 
     vim.api.nvim_set_current_buf(buf)
 
