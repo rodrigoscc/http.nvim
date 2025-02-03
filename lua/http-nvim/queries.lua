@@ -21,7 +21,7 @@ local function install_grammar()
 
     clone_grammar_repo(local_grammar_path, function(obj)
         if obj.code ~= 0 then
-            error("Failed to clone grammar repo")
+            error("Failed to clone grammar repo: ", obj.stderr)
         end
 
         vim.schedule(function()
