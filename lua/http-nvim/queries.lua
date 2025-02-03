@@ -37,9 +37,9 @@ local function update_grammar_queries()
     -- Delete to clone again
     vim.cmd("silent !rm -rf " .. local_grammar_path)
 
-    clone_grammar_repo(local_grammar_path, function(job, code)
-        if code ~= 0 then
-            error("Failed to clone grammar repo")
+    clone_grammar_repo(local_grammar_path, function(obj)
+        if obj.code ~= 0 then
+            error("Failed to clone grammar repo: ", obj.stderr)
         end
 
         vim.schedule(function()
