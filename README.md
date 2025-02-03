@@ -53,6 +53,33 @@ Install the plugin with your preferred plugin manager:
 >
 > http.nvim will format any JSON response if `jq` is installed.
 
+## Configuration
+
+Override any of the following defaults by passing a table to the `setup()` call.
+
+```lua
+---@class http.Opts
+local defaults = {
+    ---Http files must be stored in this directory for http.nvim to find them
+    ---@type string
+    http_dir = ".http",
+    ---File that contains the hooks to be executed before and after each request.
+    ---This file will be inside the directory defined by `http_dir`.
+    ---@type string
+    hooks_file = "hooks.lua",
+    ---File that contains each project environment. This file will
+    ---be inside the directory defined by `http_dir`.
+    ---@type string
+    environments_file = "environments.json",
+    ---File that contains each of the projects active environment
+    ---@type string
+    active_envs_file = vim.fn.stdpath("data") .. "/http/envs.json",
+    ---Window config for the response window. Refer to :help nvim_open_win for the available keys.
+    ---@type table
+    win_config = { split = "below" },
+}
+```
+
 ## Usage
 
 Create a new `.http` file inside the `.http` directory of your project (e.g. `.http/requests.http`). Write your request in the file, and run it with `:Http run_closest`.

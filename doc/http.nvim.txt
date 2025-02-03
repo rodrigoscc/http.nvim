@@ -50,13 +50,12 @@ Default configuration ~
         ---File that contains the hooks to be executed before and after each request.
         ---This file will be inside the directory defined by `http_dir`.
         hooks_file = "hooks.lua",
-        ---File that contains each project environments available. This file will
-        ---be inside the directory defined by `http_dir`.
+	---File that contains each project environment. This file will
+	---be inside the directory defined by `http_dir`.
         environments_file = "environments.json",
         ---File that contains each of the projects active environment
         active_envs_file = vim.fn.stdpath("data") .. "/http/envs.json",
 	---Window config for the response window. Refer to :help nvim_open_win for the available keys.
-	---@type table
 	win_config = { split = "below" },
     }
 <

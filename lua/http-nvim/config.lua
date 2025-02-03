@@ -9,7 +9,7 @@ local defaults = {
     ---This file will be inside the directory defined by `http_dir`.
     ---@type string
     hooks_file = "hooks.lua",
-    ---File that contains each project environments available. This file will
+    ---File that contains each project environment. This file will
     ---be inside the directory defined by `http_dir`.
     ---@type string
     environments_file = "environments.json",
