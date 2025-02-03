@@ -55,6 +55,9 @@ Default configuration ~
         environments_file = "environments.json",
         ---File that contains each of the projects active environment
         active_envs_file = vim.fn.stdpath("data") .. "/http/envs.json",
+	---Window command to create response window
+	---@type string
+	win_command = "botright split",
     }
 <
 
