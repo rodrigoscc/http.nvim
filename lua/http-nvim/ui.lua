@@ -60,9 +60,9 @@ end
 local function get_winbar(request, response)
     local id = request_id(request)
 
-    local status_highlight = config.highlights.finished
+    local status_highlight = config.highlights.success_code
     if response.status_code >= 400 and response.status_code <= 599 then
-        status_highlight = config.highlights.error
+        status_highlight = config.highlights.error_code
     end
 
     local total_time = ""

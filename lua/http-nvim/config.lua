@@ -29,6 +29,8 @@ local function define_highlights()
     highlight default HttpFinished ctermfg=Green guifg=#96F291
     highlight default HttpRunning ctermfg=Yellow guifg=#FFEC63
     highlight default HttpError ctermfg=Red guifg=#EB6F92
+    highlight default HttpSuccessCode ctermbg=Green guibg=#89F291 ctermfg=Black guifg=Black cterm=bold gui=bold
+    highlight default HttpErrorCode ctermbg=Red guibg=#EB6F92 ctermfg=Black guifg=Black cterm=bold gui=bold
     ]])
 end
 
@@ -57,6 +59,8 @@ M.highlights = {
     finished = "HttpFinished",
     running = "HttpRunning",
     error = "HttpError",
+    success_code = "HttpSuccessCode",
+    error_code = "HttpErrorCode",
 }
 
 return M
