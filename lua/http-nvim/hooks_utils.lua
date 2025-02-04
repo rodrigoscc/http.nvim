@@ -16,9 +16,9 @@ M.run_request = function(title, override_variables)
     end)
 end
 
-M.show = function(request, response, output)
+M.show = function(request, response, raw)
     vim.schedule(function()
-        ui.show(request, response, output)
+        ui.show(request, response, raw)
     end)
 end
 

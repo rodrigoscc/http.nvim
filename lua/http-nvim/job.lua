@@ -161,7 +161,7 @@ local function error_handler(err)
     log.fmt_error("Error parsing response %s\n" .. debug.traceback(), err)
 end
 
-M.on_exit_func = function(request, after_hook)
+M.on_exit_func = function(command, request, after_hook)
     return function(obj)
         local stdout = vim.split(obj.stdout, "\n", { trimempty = true })
         local stderr = vim.split(obj.stderr, "\n", { trimempty = true })
@@ -187,12 +187,18 @@ M.on_exit_func = function(request, after_hook)
             ui.set_request_state(request, state)
         end)
 
+        ---@type http.Raw
+        local raw = {
+            command = command,
+            output = output,
+        }
+
         if after_hook == nil then
             vim.schedule(function()
-                ui.show(request, response, output)
+                ui.show(request, response, raw)
             end)
         else
-            after_hook(request, response, output)
+            after_hook(request, response, raw)
         end
     end
 end

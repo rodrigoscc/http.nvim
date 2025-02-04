@@ -19,6 +19,10 @@
 ---@field body table
 ---@field total_time number?
 
+---@class http.Raw
+---@field command string[]
+---@field output string[]
+
 local M = {}
 
 M.url = function(request)

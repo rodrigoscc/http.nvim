@@ -2,7 +2,7 @@ local config = require("http-nvim.config")
 local fs = require("http-nvim.fs")
 
 ---@alias http.BeforeHook function(request: http.Request, run_request: function(): nil): nil
----@alias http.AfterHook function(request: http.Request, response: http.Response, stdout: string[]): nil
+---@alias http.AfterHook function(request: http.Request, response: http.Response, raw: http.Raw): nil
 
 local M = {}
 

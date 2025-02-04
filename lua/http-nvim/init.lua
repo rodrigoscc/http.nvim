@@ -303,18 +303,9 @@ local subcommand_tbl = {
             local curl_command =
                 job.build_curl_command(closest_request, request_content)
 
-            curl_command = vim.iter(ipairs(curl_command)):map(function(i, part)
-                if i == 1 then
-                    -- Do not escape command name
-                    return part
-                end
+            curl_command = ui.present_command(curl_command)
 
-                return vim.fn.shellescape(part)
-            end)
-
-            local curl_command_string = curl_command:join(" ")
-
-            vim.fn.setreg("+", curl_command_string)
+            vim.fn.setreg("+", curl_command)
             vim.notify("Yanked curl command to clipboard")
         end,
     },

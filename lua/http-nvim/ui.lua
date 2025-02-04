@@ -44,7 +44,7 @@ local function body_to_lines(response, file_type)
     if file_type == "json" then
         local json_body = vim.fn.json_encode(response.body)
         local formatted_body = utils.format_if_jq_installed(json_body)
-        return vim.split(formatted_body, "\n")
+        return vim.split(formatted_body, "\n", { trimempty = true })
     end
 
     return vim.split(response.body, "\n")
@@ -81,16 +81,46 @@ local function get_winbar(request, response)
     )
 end
 
+---Compute the winbar when there's an error running the curl command
+---@param request http.Request
+---@param raw http.Raw
+---@return string
+local function get_error_winbar(request, raw)
+    local id = request_id(request)
+
+    local status_highlight = config.highlights.error_code
+
+    return string.format("%%#%s# %s %%* %%<%s", status_highlight, "ERROR", id)
+end
+
+M.present_command = function(command)
+    return vim.iter(ipairs(command))
+        :map(function(i, p)
+            if i == 1 then
+                -- Do not escape executable.
+                return p
+            end
+
+            local escaped = vim.fn.shellescape(p)
+            local result, _ = string.gsub(escaped, "\n", "\\n")
+            return result
+        end)
+        :join(" ")
+end
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
-local function show_response(request, response)
+---@param raw http.Raw
+local function show_response(request, response, raw)
     local winbar = get_winbar(request, response)
 
     local body_winbar = winbar
-        .. "%=%#@comment.info# Body %*%#@comment# Headers %*"
+        .. "%=%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
     local headers_winbar = winbar
-        .. "%=%#@comment# Body %*%#@comment.info# Headers %*"
+        .. "%=%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
+    local raw_winbar = winbar
+        .. "%=%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
 
     local header_lines =
         headers_to_lines(response.status_line, response.headers)
@@ -116,6 +146,16 @@ local function show_response(request, response)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
     vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
 
+    local curl_command = M.present_command(raw.command)
+
+    local raw_lines = {}
+    vim.list_extend(raw_lines, { curl_command, "" })
+    vim.list_extend(raw_lines, raw.output)
+
+    local raw_buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_lines(raw_buf, 0, -1, true, raw_lines)
+    vim.api.nvim_set_option_value("filetype", "text", { buf = raw_buf })
+
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
         vim.wo[win][headers_buf].winbar = headers_winbar
@@ -123,27 +163,42 @@ local function show_response(request, response)
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
     vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_win_set_buf(win, body_buf)
+        vim.api.nvim_win_set_buf(win, raw_buf)
+        vim.wo[win][raw_buf].winbar = raw_winbar
     end, { buffer = headers_buf })
+
+    vim.keymap.set("n", "q", vim.cmd.close, { buffer = raw_buf })
+    vim.keymap.set("n", "<Tab>", function()
+        vim.api.nvim_win_set_buf(win, body_buf)
+    end, { buffer = raw_buf })
 
     vim.wo[win][body_buf].winbar = body_winbar
 end
 
-local function show_raw_output(request, stderr)
+local function show_raw_output(request, raw)
+    local winbar = get_error_winbar(request, raw)
+
+    local curl_command = M.present_command(raw.command)
+
+    local raw_lines = {}
+    vim.list_extend(raw_lines, { curl_command, "" })
+    vim.list_extend(raw_lines, raw.output)
+
     local buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_set_option_value("filetype", "text", { buf = buf })
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, stderr)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, raw_lines)
 
-    vim.api.nvim_open_win(buf, false, config.options.win_config)
+    local win = vim.api.nvim_open_win(buf, false, config.options.win_config)
+    vim.wo[win][buf].winbar = winbar
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf })
 end
 
-M.show = function(request, response, output)
+M.show = function(request, response, raw)
     if response ~= nil then
-        show_response(request, response)
+        show_response(request, response, raw)
     else
-        show_raw_output(request, output)
+        show_raw_output(request, raw)
     end
 end
 

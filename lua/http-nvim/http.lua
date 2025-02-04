@@ -51,6 +51,7 @@ end
 ---Use context to complete request data
 ---@param request http.Request
 ---@param context table
+---@return http.Request
 function Http:complete_request(request, context)
     local completed_request = {
         method = request.method,
@@ -105,13 +106,15 @@ function Http:run(request, override_context)
         request.local_context["request.after_hook"]
     )
 
+    local command = job.build_curl_command(request, content)
+
     local start_request = function()
         ui.set_request_state(request, "running")
 
         vim.system(
-            job.build_curl_command(request, content),
+            command,
             { text = true },
-            job.on_exit_func(request, after_hook)
+            job.on_exit_func(command, request, after_hook)
         )
     end
 
