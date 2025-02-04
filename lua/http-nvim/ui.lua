@@ -73,7 +73,7 @@ local function get_winbar(request, response)
     end
 
     return string.format(
-        "%%#%s#[%s]%%* %s %s",
+        "%%#%s# %s %%* %%<%s %s",
         status_highlight,
         response.status_code,
         id,
