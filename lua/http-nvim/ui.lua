@@ -134,11 +134,9 @@ local function show_raw_output(request, stderr)
     vim.api.nvim_set_option_value("filetype", "text", { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, stderr)
 
-    vim.cmd(config.options.win_command)
+    vim.api.nvim_open_win(buf, false, config.options.win_config)
 
-    vim.api.nvim_set_current_buf(buf)
-
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = true })
+    vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf })
 end
 
 M.show = function(request, response, output)
