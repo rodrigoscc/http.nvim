@@ -160,6 +160,7 @@ local function snacks_jump(requests)
     local text = require("snacks.picker.format").text
 
     Snacks.picker.pick({
+        title = "Go to HTTP request",
         items = items,
         format = function(item, picker)
             return vim.list_extend(file(item, picker), text(item, picker))
@@ -193,6 +194,7 @@ local function snacks_run(requests)
     local text = require("snacks.picker.format").text
 
     Snacks.picker.pick({
+        title = "Run HTTP request",
         items = items,
         format = function(item, picker)
             return vim.list_extend(file(item, picker), text(item, picker))

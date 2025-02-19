@@ -40,7 +40,7 @@ Install the plugin with your preferred plugin manager:
         "nvim-lua/plenary.nvim",
         "nvim-treesitter/nvim-treesitter",
         "nvim-telescope/telescope.nvim", -- optional: uses it as picker
-        "ibhagwan/fzf-lua" -- optional: uses it as picker
+        "ibhagwan/fzf-lua", -- optional: uses it as picker
         "folke/snacks.nvim" -- optional: uses it as picker
     },
 }
