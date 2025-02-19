@@ -14,6 +14,7 @@ local http_cmp_source = require("http-nvim.cmp_source")
 
 local has_telescope = pcall(require, "telescope")
 local has_fzf_lua = pcall(require, "fzf-lua")
+local has_snacks = pcall(require, "snacks")
 
 local function telescope_run(requests)
     local pickers = require("telescope.pickers")
@@ -137,6 +138,72 @@ local function fzf_lua_run(requests)
     })
 end
 
+local function snacks_jump(requests)
+    local items = vim.iter(ipairs(requests))
+        :map(function(i, request)
+            local node_start, _, _ = request.node:start()
+            local line = node_start + 1
+
+            local item = {
+                text = id(request),
+                idx = i,
+                score = 1,
+                file = request.source.route,
+                pos = { line, 0 },
+            }
+
+            return item
+        end)
+        :totable()
+
+    local file = require("snacks.picker.format").file
+    local text = require("snacks.picker.format").text
+
+    Snacks.picker.pick({
+        items = items,
+        format = function(item, picker)
+            return vim.list_extend(file(item, picker), text(item, picker))
+        end,
+    })
+end
+
+local function snacks_run(requests)
+    local id_to_request = {}
+
+    local items = vim.iter(ipairs(requests))
+        :map(function(i, request)
+            local node_start, _, _ = request.node:start()
+            local line = node_start + 1
+
+            local item = {
+                text = id(request),
+                idx = i,
+                score = 1,
+                file = request.source.route,
+                pos = { line, 0 },
+            }
+
+            id_to_request[i] = request
+
+            return item
+        end)
+        :totable()
+
+    local file = require("snacks.picker.format").file
+    local text = require("snacks.picker.format").text
+
+    Snacks.picker.pick({
+        items = items,
+        format = function(item, picker)
+            return vim.list_extend(file(item, picker), text(item, picker))
+        end,
+        confirm = function(picker, item)
+            picker:close()
+            http:run(id_to_request[item.idx])
+        end,
+    })
+end
+
 local function get_variable_name_under_cursor()
     local node = vim.treesitter.get_node()
 
@@ -206,6 +273,8 @@ local subcommand_tbl = {
                 telescope_run(requests)
             elseif has_fzf_lua then
                 fzf_lua_run(requests)
+            elseif has_snacks then
+                snacks_run(requests)
             else
                 error(
                     "Either nvim-telescope/telescope.nvim or ibhagwan/fzf-lua are required to run this command"
@@ -221,6 +290,8 @@ local subcommand_tbl = {
                 telescope_jump(requests)
             elseif has_fzf_lua then
                 fzf_lua_jump(requests)
+            elseif has_snacks then
+                snacks_jump(requests)
             else
                 error(
                     "Either nvim-telescope/telescope.nvim or ibhagwan/fzf-lua are required to run this command"

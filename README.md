@@ -8,8 +8,8 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 
 ## Features
 - Store multiple requests in a `.http` file
-- Search project requests with Telescope or fzf-lua
-- Run project requests with Telescope or fzf-lua
+- Search project requests with Telescope or fzf-lua or snacks
+- Run project requests with Telescope or fzf-lua or snacks
 - Manage multiple environments per project
 - Declare global or request-scoped variables in the `.http` file
 - Run last request run for easier API development iteration
@@ -41,6 +41,7 @@ Install the plugin with your preferred plugin manager:
         "nvim-treesitter/nvim-treesitter",
         "nvim-telescope/telescope.nvim", -- optional: uses it as picker
         "ibhagwan/fzf-lua" -- optional: uses it as picker
+        "folke/snacks.nvim" -- optional: uses it as picker
     },
 }
 ```
