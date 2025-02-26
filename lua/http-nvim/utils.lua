@@ -9,8 +9,14 @@ M.format_if_jq_installed = function(json)
     end
 end
 
-M.get_content_type = function(content)
-    return content.headers["Content-Type"] or content.headers["content-type"]
+M.get_content_type = function(headers)
+    for name in pairs(headers) do
+        if string.lower(name) == "content-type" then
+            return headers[name]
+        end
+    end
+
+    return nil
 end
 
 local DEFAULT_BODY_TYPE = "text"
@@ -18,7 +24,7 @@ local DEFAULT_BODY_TYPE = "text"
 M.get_body_file_type = function(headers)
     local body_file_type = DEFAULT_BODY_TYPE
 
-    local content_type = headers["Content-Type"] or headers["content-type"]
+    local content_type = M.get_content_type(headers)
     if content_type == nil then
         return body_file_type
     end

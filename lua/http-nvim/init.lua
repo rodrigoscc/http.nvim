@@ -2,7 +2,7 @@ local http = require("http-nvim.http")
 local project = require("http-nvim.project")
 local hooks = require("http-nvim.hooks")
 local ui = require("http-nvim.ui")
-local job = require("http-nvim.job")
+local curl = require("http-nvim.curl")
 local Source = require("http-nvim.source").Source
 local SourceType = require("http-nvim.source").type
 local id = require("http-nvim.requests").id
@@ -374,7 +374,7 @@ local subcommand_tbl = {
             request_content = http:complete_content(request_content, context)
 
             local curl_command =
-                job.build_curl_command(closest_request, request_content)
+                curl.build_command(closest_request, request_content)
 
             curl_command = ui.present_command(curl_command)
 

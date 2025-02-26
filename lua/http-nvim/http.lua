@@ -1,7 +1,9 @@
 local hooks = require("http-nvim.hooks")
-local job = require("http-nvim.job")
 local project = require("http-nvim.project")
 local ui = require("http-nvim.ui")
+local curl = require("http-nvim.curl")
+local Parser = require("http-nvim.parser").Parser
+local log = require("http-nvim.log")
 
 ---@class Http
 ---@field last_request http.Request
@@ -81,6 +83,54 @@ function Http:get_aggregate_context(request)
     return context
 end
 
+local function error_handler(err)
+    log.fmt_error("Error parsing response %s\n" .. debug.traceback(), err)
+end
+
+function Http:_request_callback(command, request, after_hook)
+    return function(obj)
+        local stdout = vim.split(obj.stdout, "\n", { trimempty = true })
+        local stderr = vim.split(obj.stderr, "\n", { trimempty = true })
+        local output = vim.list_extend(stdout, stderr)
+
+        local response = nil
+        local status_ok = obj.code == 0
+
+        ---@type http.RequestState
+        local state = "error"
+
+        if status_ok then
+            local parser = Parser.new()
+            local status, result =
+                xpcall(parser.parse_response, error_handler, parser, output)
+
+            if status then
+                response = result
+            end
+
+            state = "finished"
+        end
+
+        vim.schedule(function()
+            ui.set_request_state(request, state)
+        end)
+
+        ---@type http.Raw
+        local raw = {
+            command = command,
+            output = output,
+        }
+
+        if after_hook == nil then
+            vim.schedule(function()
+                ui.show(request, response, raw)
+            end)
+        else
+            after_hook(request, response, raw)
+        end
+    end
+end
+
 ---Runs a request
 ---@param request http.Request
 ---@param override_context table?
@@ -106,7 +156,7 @@ function Http:run(request, override_context)
         request.local_context["request.after_hook"]
     )
 
-    local command = job.build_curl_command(request, content)
+    local command = curl.build_command(request, content)
 
     local start_request = function()
         ui.set_request_state(request, "running")
@@ -114,7 +164,7 @@ function Http:run(request, override_context)
         vim.system(
             command,
             { text = true },
-            job.on_exit_func(command, request, after_hook)
+            self:_request_callback(command, request, after_hook)
         )
     end
 
