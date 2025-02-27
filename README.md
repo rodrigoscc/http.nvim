@@ -149,7 +149,7 @@ Content-Type: application/json
 | `request.title`       | The title of the request. Generally used to search and run the request directly. |
 | `request.after_hook`  | The hook function name to run after the request completes.                       |
 | `request.before_hook` | The hook function name to run before the request completes.                      |
-| `request.flags`       | Additional flags to include in the generated curl command.                       |
+| `request.curl_flags`  | Additional flags to include in the generated curl command.                       |
 
 
 ### Hooks

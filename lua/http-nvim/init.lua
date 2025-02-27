@@ -373,10 +373,17 @@ local subcommand_tbl = {
             closest_request = http:complete_request(closest_request, context)
             request_content = http:complete_content(request_content, context)
 
-            local curl_command =
-                curl.build_command(closest_request, request_content)
+            local status, result =
+                pcall(curl.build_command, closest_request, request_content)
+            if not status then
+                vim.notify(
+                    "Could not build cURL command: " .. result,
+                    vim.log.levels.ERROR
+                )
+                return
+            end
 
-            curl_command = ui.present_command(curl_command)
+            local curl_command = ui.present_command(result)
 
             vim.fn.setreg("+", curl_command)
             vim.notify("Yanked curl command to clipboard")

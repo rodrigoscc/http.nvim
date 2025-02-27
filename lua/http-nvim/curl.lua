@@ -7,9 +7,9 @@ local function minify_json(json_body)
     return vim.json.encode(vim.json.decode(json_body))
 end
 
-local function get_additional_args(request)
-    if request.local_context["request.flags"] ~= nil then
-        return vim.split(request.local_context["request.flags"], " ")
+local function get_curl_user_flags(request)
+    if request.local_context["request.curl_flags"] ~= nil then
+        return vim.split(request.local_context["request.curl_flags"], " ")
     end
 
     return {}
@@ -53,8 +53,19 @@ M.build_command = function(request, content)
 
     table.insert(command, url(request))
 
-    local additional_args = get_additional_args(request)
-    vim.list_extend(command, additional_args)
+    local curl_user_flags = get_curl_user_flags(request)
+
+    if
+        vim.list_contains(curl_user_flags, "--write-out")
+        or vim.list_contains(curl_user_flags, "-w")
+    then
+        error(
+            "You cannot set the --write-out flag, http.nvim expects a specific format.",
+            0
+        )
+    end
+
+    vim.list_extend(command, curl_user_flags)
 
     return command
 end

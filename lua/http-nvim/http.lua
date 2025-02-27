@@ -156,15 +156,24 @@ function Http:run(request, override_context)
         request.local_context["request.after_hook"]
     )
 
-    local command = curl.build_command(request, content)
+    local status, result = pcall(curl.build_command, request, content)
+    if not status then
+        vim.notify(
+            "Could not run HTTP request: " .. result,
+            vim.log.levels.ERROR
+        )
+        return
+    end
+
+    local curl_command = result
 
     local start_request = function()
         ui.set_request_state(request, "running")
 
         vim.system(
-            command,
+            curl_command,
             { text = true },
-            self:_request_callback(command, request, after_hook)
+            self:_request_callback(curl_command, request, after_hook)
         )
     end
 
