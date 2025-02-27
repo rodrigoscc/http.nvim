@@ -47,7 +47,7 @@ local function body_to_lines(response, file_type)
         return vim.split(formatted_body, "\n", { trimempty = true })
     end
 
-    return vim.split(response.body, "\n")
+    return vim.split(response.body, "\n", { trimempty = true })
 end
 
 local function sanitize_time_total(time_total)
