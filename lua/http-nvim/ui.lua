@@ -131,6 +131,14 @@ local function format_response(response_buf, response_body, response_filetype)
     end
 end
 
+local function setup_buffer(buf, buftype, filetype)
+    vim.api.nvim_buf_set_option(buf, 'filetype', 'http-buf-' .. buftype)
+    vim.api.nvim_buf_call(buf, function()
+        vim.cmd('syntax on')
+        vim.cmd('setlocal syntax=' .. filetype)
+    end)
+end
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
@@ -154,11 +162,7 @@ local function show_response(request, response, raw)
     local body_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(body_buf, 0, -1, true, body_lines)
     -- Set filetype after adding lines for better performance with large bodies.
-    vim.api.nvim_set_option_value(
-        "filetype",
-        body_file_type,
-        { buf = body_buf }
-    )
+    setup_buffer(body_buf, 'body', body_file_type)
 
     local win =
         vim.api.nvim_open_win(body_buf, false, config.options.win_config)
@@ -167,7 +171,7 @@ local function show_response(request, response, raw)
 
     local headers_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
-    vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
+    setup_buffer(headers_buf, 'headers', 'http')
 
     local curl_command = M.present_command(raw.command)
 
@@ -177,22 +181,25 @@ local function show_response(request, response, raw)
 
     local raw_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(raw_buf, 0, -1, true, raw_lines)
-    vim.api.nvim_set_option_value("filetype", "text", { buf = raw_buf })
+    setup_buffer(raw_buf, 'raw', 'text')
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
         vim.wo[win][headers_buf].winbar = headers_winbar
+        -- setup_buffer(headers_buf, 'headers', 'http')
     end, { buffer = body_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, raw_buf)
         vim.wo[win][raw_buf].winbar = raw_winbar
+        -- setup_buffer(raw_buf, 'raw', 'text')
     end, { buffer = headers_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = raw_buf })
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, body_buf)
+        -- setup_buffer(body_buf, 'body', 'html')
     end, { buffer = raw_buf })
 
     vim.wo[win][body_buf].winbar = body_winbar
