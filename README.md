@@ -175,9 +175,11 @@ local function save_access_token(request, response, stdout)
         return
     end
 
+    local body = vim.json.decode(response.body)
+
     update_env({
-        access_token = response.body.access_token,
-        refresh_token = response.body.refresh_token,
+        access_token = body.access_token,
+        refresh_token = body.refresh_token,
     })
 end
 
