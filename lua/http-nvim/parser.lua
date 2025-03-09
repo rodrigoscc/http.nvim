@@ -19,16 +19,7 @@ function Parser:parse_response(raw_response)
     local status_line = self:parse_status_line(headers_lines)
     local parsed_headers = self:parse_http_headers_lines(headers_lines)
 
-    local parsed_body = ""
     local body_joined = table.concat(body_lines, "\n")
-
-    local body_file_type = utils.get_body_file_type(parsed_headers)
-
-    if body_file_type == "json" then
-        parsed_body = vim.json.decode(body_joined)
-    else
-        parsed_body = body_joined
-    end
 
     local parsed_status_code = self:parse_status_code(raw_response[1])
 
@@ -36,7 +27,7 @@ function Parser:parse_response(raw_response)
     local response = {
         status_code = parsed_status_code,
         status_line = status_line,
-        body = parsed_body,
+        body = body_joined,
         headers = parsed_headers,
         ok = parsed_status_code >= 200 and parsed_status_code <= 299,
         total_time = tonumber(total_time),

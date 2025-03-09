@@ -40,13 +40,7 @@ local function headers_to_lines(status_line, headers)
     return lines
 end
 
-local function body_to_lines(response, file_type)
-    if file_type == "json" then
-        local json_body = vim.fn.json_encode(response.body)
-        local formatted_body = utils.format_if_jq_installed(json_body)
-        return vim.split(formatted_body, "\n", { trimempty = true })
-    end
-
+local function body_to_lines(response)
     return vim.split(response.body, "\n", { trimempty = true })
 end
 
@@ -108,6 +102,35 @@ M.present_command = function(command)
         :join(" ")
 end
 
+--- Formats response body in the given buffer.
+---@param response_buf integer
+---@param response_body string
+---@param response_filetype string
+local function format_response(response_buf, response_body, response_filetype)
+    if response_filetype == "json" and vim.fn.executable("jq") then
+        vim.system(
+            { "jq", "--sort-keys", "--indent", "4", "." },
+            { text = true, stdin = response_body },
+            function(obj)
+                if obj.code == 0 then
+                    local formatted_lines =
+                        vim.split(obj.stdout, "\n", { trimempty = true })
+
+                    vim.schedule(function()
+                        vim.api.nvim_buf_set_lines(
+                            response_buf,
+                            0,
+                            -1,
+                            true,
+                            formatted_lines
+                        )
+                    end)
+                end
+            end
+        )
+    end
+end
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
@@ -126,7 +149,7 @@ local function show_response(request, response, raw)
         headers_to_lines(response.status_line, response.headers)
 
     local body_file_type = utils.get_body_file_type(response.headers)
-    local body_lines = body_to_lines(response, body_file_type)
+    local body_lines = body_to_lines(response)
 
     local body_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(body_buf, 0, -1, true, body_lines)
@@ -173,6 +196,8 @@ local function show_response(request, response, raw)
     end, { buffer = raw_buf })
 
     vim.wo[win][body_buf].winbar = body_winbar
+
+    format_response(body_buf, response.body, body_file_type)
 end
 
 local function show_raw_output(request, raw)

@@ -16,7 +16,7 @@
 ---@field status_code number
 ---@field status_line string
 ---@field headers table
----@field body table
+---@field body string
 ---@field total_time number?
 
 ---@class http.Raw
