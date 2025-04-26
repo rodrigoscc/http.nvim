@@ -208,7 +208,7 @@ local function create_headers_buffer(request, response)
     return headers_buf
 end
 
-local function create_raw_buffet(request, response, raw)
+local function create_raw_buffer(request, response, raw)
     local curl_command = M.printable_command(raw.command)
 
     local raw_lines = {}
@@ -244,7 +244,7 @@ local function show_response(request, response, raw)
 
     local body_buf = create_body_buffer(request, response)
     local headers_buf = create_headers_buffer(request, response)
-    local raw_buf = create_raw_buffet(request, response, raw)
+    local raw_buf = create_raw_buffer(request, response, raw)
 
     local win =
         vim.api.nvim_open_win(body_buf, false, config.options.win_config)
@@ -275,20 +275,11 @@ local function show_response(request, response, raw)
     end, { buffer = raw_buf })
 end
 
-local function show_raw_output(request, raw)
-    local winbar = get_error_winbar(request, raw)
-
-    local curl_command = M.present_command(raw.command)
-
-    local raw_lines = {}
-    vim.list_extend(raw_lines, { curl_command, "" })
-    vim.list_extend(raw_lines, raw.output)
-
-    local buf = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_set_option_value("filetype", "text", { buf = buf })
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, raw_lines)
-
+local function show_raw_output(request, response, raw)
+    local buf = create_raw_buffer(request, response, raw)
     local win = vim.api.nvim_open_win(buf, false, config.options.win_config)
+
+    local winbar = get_error_winbar(request, raw)
     vim.wo[win][buf].winbar = winbar
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf })
@@ -298,7 +289,7 @@ M.show = function(request, response, raw)
     if response ~= nil then
         show_response(request, response, raw)
     else
-        show_raw_output(request, raw)
+        show_raw_output(request, response, raw)
     end
 end
 
