@@ -22,6 +22,8 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 - Hook functions are declared in a separate Lua file, for easier maintenance and reuse
 - Autocomplete variables with cmp
 - Inspect variables current value
+- See the raw curl command and output in a separate buffer
+- Copy the equivalent curl command of request under the cursor
 - Lualine component to show current environment
 
 ## Installation
