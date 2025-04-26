@@ -17,8 +17,7 @@ end
 
 ---Build curl command arguments to run request
 ---@param request http.Request
----@param content http.RequestContent
-M.build_command = function(request, content)
+M.build_command = function(request)
     local command = {
         "curl",
         "--include",
@@ -28,10 +27,10 @@ M.build_command = function(request, content)
         "\n%{time_total}\n%{size_header}",
     }
 
-    if content.body ~= nil then
-        local body = content.body
+    if request.body ~= nil then
+        local body = request.body
 
-        local file_type = utils.get_content_type(content.headers)
+        local file_type = utils.get_content_type(request.headers)
         if file_type == "application/json" then
             -- minifying just to minimize network load
             body = minify_json(body)
@@ -41,11 +40,9 @@ M.build_command = function(request, content)
         table.insert(command, body)
     end
 
-    if content.headers ~= nil then
-        for _, header in ipairs(content.headers) do
-            table.insert(command, "--header")
-            table.insert(command, header)
-        end
+    for name, value in pairs(request.headers) do
+        table.insert(command, "--header")
+        table.insert(command, name .. ": " .. value)
     end
 
     table.insert(command, "--request")

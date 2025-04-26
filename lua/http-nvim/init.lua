@@ -28,7 +28,7 @@ local function telescope_run(requests)
             finder = finders.new_table({
                 results = requests,
                 entry_maker = function(request)
-                    local line, _, _ = request.node:start()
+                    local line = unpack(request.start_range)
 
                     return {
                         value = id(request),
@@ -72,7 +72,7 @@ local function telescope_jump(requests)
             finder = finders.new_table({
                 results = requests,
                 entry_maker = function(request)
-                    local line, _, _ = request.node:start()
+                    local line = unpack(request.start_range)
 
                     return {
                         value = id(request),
@@ -91,7 +91,7 @@ end
 
 local function fzf_lua_entry_maker(request)
     local fzf_lua = require("fzf-lua")
-    local node_start, _, _ = request.node:start()
+    local node_start = unpack(request.start_range)
 
     local line = node_start + 1
 
@@ -141,7 +141,7 @@ end
 local function snacks_jump(requests)
     local items = vim.iter(ipairs(requests))
         :map(function(i, request)
-            local node_start, _, _ = request.node:start()
+            local node_start = unpack(request.start_range)
             local line = node_start + 1
 
             local item = {
@@ -173,7 +173,7 @@ local function snacks_run(requests)
 
     local items = vim.iter(ipairs(requests))
         :map(function(i, request)
-            local node_start, _, _ = request.node:start()
+            local node_start = unpack(request.start_range)
             local line = node_start + 1
 
             local item = {
@@ -366,15 +366,11 @@ local subcommand_tbl = {
                 return
             end
 
-            local request_content = source:get_request_content(closest_request)
-
             local context = http:get_aggregate_context(closest_request)
 
             closest_request = http:complete_request(closest_request, context)
-            request_content = http:complete_content(request_content, context)
 
-            local status, result =
-                pcall(curl.build_command, closest_request, request_content)
+            local status, result = pcall(curl.build_command, closest_request)
             if not status then
                 vim.notify(
                     "Could not build cURL command: " .. result,

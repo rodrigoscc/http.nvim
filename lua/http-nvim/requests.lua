@@ -2,14 +2,14 @@
 ---@field method string
 ---@field url string
 ---@field query string?
----@field node TSNode
+---@field headers table
+---@field body string?
 ---@field local_context table
 ---@field source http.Source
-
----@class http.RequestContent
----@field headers string[]
----@field body string?
--- TODO: Should headers be parsed before getting here?
+---@field start_range table
+---@field end_range table
+---@field context_start_row number?
+---@field context_end_row number?
 
 ---@class http.Response
 ---@field ok boolean

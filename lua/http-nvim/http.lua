@@ -26,42 +26,32 @@ local function interp(s, tab)
     )
 end
 
----Use context to complete the request content
----@param content http.RequestContent
----@param context table
-function Http:complete_content(content, context)
-    ---@type http.RequestContent
-    local completed_content = { headers = {} }
-
-    if content.body ~= nil then
-        completed_content.body = interp(content.body, context)
-    end
-
-    if content.headers ~= nil then
-        local replaced_headers = {}
-
-        for _, header in ipairs(content.headers) do
-            table.insert(replaced_headers, interp(header, context))
-        end
-
-        completed_content.headers = replaced_headers
-    end
-
-    return completed_content
-end
-
 ---Use context to complete request data
 ---@param request http.Request
 ---@param context table
 ---@return http.Request
 function Http:complete_request(request, context)
+    local completed_headers = {}
+
+    for name, value in pairs(request.headers) do
+        local completed_name = interp(name, context)
+        local completed_value = interp(value, context)
+        completed_headers[completed_name] = completed_value
+    end
+
+    ---@type http.Request
     local completed_request = {
         method = request.method,
         url = interp(request.url, context),
         query = request.query and interp(request.query, context),
-        node = request.node,
+        body = request.body and interp(request.body, context),
+        headers = completed_headers,
         local_context = request.local_context,
         source = request.source,
+        start_range = request.start_range,
+        end_range = request.end_range,
+        context_start_row = request.context_start_row,
+        context_end_row = request.context_end_row,
     }
 
     return completed_request
@@ -144,19 +134,16 @@ function Http:run(request, override_context)
         return
     end
 
-    local content = source:get_request_content(request)
-
     local context = self:get_aggregate_context(request)
 
     request = self:complete_request(request, context)
-    content = self:complete_content(content, context)
 
     local before_hook, after_hook = hooks.load_hook_functions(
         request.local_context["request.before_hook"],
         request.local_context["request.after_hook"]
     )
 
-    local status, result = pcall(curl.build_command, request, content)
+    local status, result = pcall(curl.build_command, request)
     if not status then
         vim.notify(
             "Could not run HTTP request: " .. result,

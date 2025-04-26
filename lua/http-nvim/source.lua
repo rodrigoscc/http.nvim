@@ -31,6 +31,45 @@ local function extract_method_and_url(method_url)
     return method, url
 end
 
+---@param request_node TSNode
+local function find_enclosing_separators(request_node)
+    local p_separator = nil
+    local n_separator = nil
+
+    local p_sibling = request_node:prev_sibling()
+    while p_sibling ~= nil do
+        if p_sibling:type() == tree_sitter_nodes.separator then
+            p_separator = p_sibling
+            break
+        end
+
+        p_sibling = p_sibling:prev_sibling()
+    end
+
+    local n_sibling = request_node:next_sibling()
+    while n_sibling ~= nil do
+        if n_sibling:type() == tree_sitter_nodes.separator then
+            n_separator = n_sibling
+            break
+        end
+
+        n_sibling = n_sibling:next_sibling()
+    end
+
+    local p_separator_line = nil
+    local n_separator_line = nil
+
+    if p_separator then
+        p_separator_line, _, _, _ = p_separator:range()
+    end
+
+    if n_separator then
+        n_separator_line, _, _, _ = n_separator:range()
+    end
+
+    return p_separator_line, n_separator_line
+end
+
 ---@enum http.SourceType
 local source_type = {
     BUFFER = "buffer",
@@ -112,6 +151,89 @@ function Source:verify_tree()
     return true
 end
 
+---Extracts the request data from the TS Node.
+---@param request_node TSNode
+---@return http.Request
+function Source:extract_request(request_node)
+    local start_line_node = request_node:named_child(0)
+    assert(
+        start_line_node ~= nil
+            and start_line_node:type() == tree_sitter_nodes.start_line,
+        "First request child must be the start line"
+    )
+    local start_line =
+        vim.trim(vim.treesitter.get_node_text(start_line_node, self.repr))
+
+    local method, url = extract_method_and_url(start_line)
+
+    local domain_path, query = unpack(vim.split(url, "?"))
+
+    local header_nodes = {}
+    local request_child_count = request_node:named_child_count()
+
+    local body_node = nil
+
+    for i = 0, request_child_count - 1 do
+        local child = request_node:named_child(i)
+        assert(
+            child ~= nil,
+            "request node is meant to have "
+                .. request_child_count
+                .. " children"
+        )
+
+        if child:type() == tree_sitter_nodes.header then
+            table.insert(header_nodes, child)
+        elseif child:type() == tree_sitter_nodes.body then
+            body_node = child
+        end
+    end
+
+    local headers = {}
+
+    for _, node in ipairs(header_nodes) do
+        local name_node = node:field("name")[1]
+        local value_node = node:field("value")[1]
+
+        -- TODO: Make sure TS grammar captures only after trailing whitespace and before it.
+        local name =
+            vim.trim(vim.treesitter.get_node_text(name_node, self.repr))
+        local value =
+            vim.trim(vim.treesitter.get_node_text(value_node, self.repr))
+
+        headers[name] = value
+    end
+
+    local body = nil
+
+    if body_node then
+        body = vim.trim(vim.treesitter.get_node_text(body_node, self.repr))
+    end
+
+    local s, s1, _ = request_node:start()
+    local e, e1, _ = request_node:end_()
+
+    local context_start_row, context_end_row =
+        find_enclosing_separators(request_node)
+
+    ---@type http.Request
+    local request = {
+        url = domain_path,
+        method = method,
+        query = query,
+        headers = headers,
+        body = body,
+        local_context = {},
+        source = self,
+        start_range = { s, s1 },
+        end_range = { e, e1 },
+        context_start_row = context_start_row,
+        context_end_row = context_end_row,
+    }
+
+    return request
+end
+
 function Source:get_buffer_requests()
     local tree = self:get_tree()
 
@@ -135,27 +257,11 @@ function Source:get_buffer_requests()
                 vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
             if capture_name == "request" then
-                local start_line_node = node:named_child(0)
-                local start_line = vim.trim(
-                    vim.treesitter.get_node_text(start_line_node, self.repr)
-                )
-
-                local method, url = extract_method_and_url(start_line)
-
-                local domain_path, query = unpack(vim.split(url, "?"))
-
-                ---@type http.Request
-                local request = {
-                    url = domain_path,
-                    method = method,
-                    query = query,
-                    node = node,
-                    local_context = above_local_context,
-                    source = self,
-                }
+                local request = self:extract_request(node)
+                request.local_context = above_local_context
+                above_local_context = {}
 
                 table.insert(requests, request)
-                above_local_context = {}
             elseif capture_name == "variable_name" then
                 variable = { name = capture_value, value = "" }
             elseif capture_name == "variable_value" then
@@ -197,24 +303,8 @@ function Source:get_file_requests()
                 vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
             if capture_name == "request" then
-                local start_line_node = node:named_child(0)
-                local start_line = vim.trim(
-                    vim.treesitter.get_node_text(start_line_node, self.repr)
-                )
-
-                local method, url = extract_method_and_url(start_line)
-
-                local domain_path, query = unpack(vim.split(url, "?"))
-
-                local request = {
-                    url = domain_path,
-                    method = method,
-                    query = query,
-                    node = node,
-                    local_context = above_local_context,
-                    source = self,
-                }
-
+                local request = self:extract_request(node)
+                request.local_context = above_local_context
                 above_local_context = {}
 
                 table.insert(requests, request)
@@ -244,55 +334,18 @@ function Source:get_requests()
     end
 end
 
----@param request http.Request
-local function find_enclosing_separators(request)
-    local p_separator = nil
-    local n_separator = nil
-
-    local node = request.node
-
-    local p_sibling = node:prev_sibling()
-    while p_sibling ~= nil do
-        if p_sibling:type() == tree_sitter_nodes.separator then
-            p_separator = p_sibling
-            break
-        end
-
-        p_sibling = p_sibling:prev_sibling()
-    end
-
-    local n_sibling = node:next_sibling()
-    while n_sibling ~= nil do
-        if n_sibling:type() == tree_sitter_nodes.separator then
-            n_separator = n_sibling
-            break
-        end
-
-        n_sibling = n_sibling:next_sibling()
-    end
-
-    local p_separator_line = nil
-    local n_separator_line = nil
-
-    if p_separator then
-        p_separator_line, _, _, _ = p_separator:range()
-    end
-
-    if n_separator then
-        n_separator_line, _, _, _ = n_separator:range()
-    end
-
-    return p_separator_line, n_separator_line
-end
-
 function Source:get_closest_request_from(row)
     local requests = self:get_requests()
 
     for _, request in ipairs(requests) do
-        local context_start, context_end = find_enclosing_separators(request)
-
-        local inside_context = (context_start == nil or context_start < row - 1)
-            and (context_end == nil or row - 1 < context_end)
+        local inside_context = (
+            request.context_start_row == nil
+            or request.context_start_row < row - 1
+        )
+            and (
+                request.context_end_row == nil
+                or row - 1 < request.context_end_row
+            )
 
         if inside_context then
             return request
@@ -315,7 +368,7 @@ function Source:get_request_context(request)
         return {}
     end
 
-    local stop, _, _, _ = request.node:range()
+    local stop = unpack(request.start_range)
 
     local context = {}
 
@@ -340,38 +393,6 @@ function Source:get_request_context(request)
     end
 
     return context
-end
-
-function Source:get_request_content(request)
-    ---@type http.RequestContent
-    local content = { headers = {} }
-
-    local header_nodes = {}
-    local request_child_count = request.node:named_child_count()
-
-    local body_node = nil
-
-    for i = 0, request_child_count - 1 do
-        local child = request.node:named_child(i)
-
-        if child:type() == tree_sitter_nodes.header then
-            table.insert(header_nodes, child)
-        elseif child:type() == tree_sitter_nodes.body then
-            body_node = child
-        end
-    end
-
-    for _, node in ipairs(header_nodes) do
-        content.headers[#content.headers + 1] =
-            vim.trim(vim.treesitter.get_node_text(node, self.repr))
-    end
-
-    if body_node then
-        content.body =
-            vim.trim(vim.treesitter.get_node_text(body_node, self.repr))
-    end
-
-    return content
 end
 
 return { Source = Source, type = source_type }

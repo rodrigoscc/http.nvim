@@ -144,6 +144,13 @@ local function format_response(response_buf, response_body, response_filetype)
     end
 end
 
+---@enum http.BufferType
+local Buffer = {
+    Body = "body",
+    Headers = "headers",
+    Raw = "raw",
+}
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
@@ -210,6 +217,18 @@ local function show_response(request, response, raw)
 
     vim.wo[win][body_buf].winbar = body_winbar
 
+    vim.b[body_buf].http_nvim_request = request
+    vim.b[body_buf].http_nvim_response = response
+    vim.b[body_buf].http_nvim_buffer = Buffer.Body
+
+    vim.b[headers_buf].http_nvim_request = request
+    vim.b[headers_buf].http_nvim_response = response
+    vim.b[headers_buf].http_nvim_buffer = Buffer.Headers
+
+    vim.b[raw_buf].http_nvim_request = request
+    vim.b[raw_buf].http_nvim_response = response
+    vim.b[raw_buf].http_nvim_buffer = Buffer.Raw
+
     format_response(body_buf, response.body, body_file_type)
 end
 
@@ -267,7 +286,7 @@ M.set_request_state = function(request, state)
         return
     end
 
-    local request_line, _, _, _ = request.node:range()
+    local request_line = unpack(request.start_range)
 
     local icon = Icons[state]
     local highlight = Highlights[state]
