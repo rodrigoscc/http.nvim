@@ -234,104 +234,84 @@ function Source:extract_request(request_node)
     return request
 end
 
-function Source:get_buffer_requests()
-    local tree = self:get_tree()
-
-    if tree == nil then
-        return {}
-    end
-
-    ---@type http.Request[]
-    local requests = {}
-
-    local above_local_context = {}
-
-    local requests_query = queries.requests_query()
-
-    for _, match in requests_query:iter_matches(tree:root(), self.repr) do
-        local variable = nil
-
-        for id, node in pairs(match) do
-            local capture_name = requests_query.captures[id]
-            local capture_value =
-                vim.trim(vim.treesitter.get_node_text(node, self.repr))
-
-            if capture_name == "request" then
-                local request = self:extract_request(node)
-                request.local_context = above_local_context
-                above_local_context = {}
-
-                table.insert(requests, request)
-            elseif capture_name == "variable_name" then
-                variable = { name = capture_value, value = "" }
-            elseif capture_name == "variable_value" then
-                if variable then
-                    variable.value = capture_value
-                end
-            end
-        end
-
-        if variable then
-            above_local_context[variable.name] = variable.value
-            variable = nil
-        end
-    end
-
-    return requests
-end
-
-function Source:get_file_requests()
-    local tree = self:get_tree()
-
-    if tree == nil then
-        return {}
-    end
-
-    ---@type http.Request[]
-    local requests = {}
-
-    local above_local_context = {}
-
-    local requests_query = queries.requests_query()
-
-    for _, match in requests_query:iter_matches(tree:root(), self.repr) do
-        local variable = nil
-
-        for id, node in pairs(match) do
-            local capture_name = requests_query.captures[id]
-            local capture_value =
-                vim.trim(vim.treesitter.get_node_text(node, self.repr))
-
-            if capture_name == "request" then
-                local request = self:extract_request(node)
-                request.local_context = above_local_context
-                above_local_context = {}
-
-                table.insert(requests, request)
-            elseif capture_name == "variable_name" then
-                variable = { name = capture_value, value = "" }
-            elseif capture_name == "variable_value" then
-                if variable then
-                    variable.value = capture_value
-                end
-            end
-        end
-
-        if variable then
-            above_local_context[variable.name] = variable.value
-            variable = nil
-        end
-    end
-
-    return requests
-end
-
 function Source:get_requests()
-    if Source.type == source_type.BUFFER then
-        return self:get_buffer_requests()
-    else
-        return self:get_file_requests()
+    local tree = self:get_tree()
+
+    if tree == nil then
+        return {}
     end
+
+    ---@type http.Request[]
+    local requests = {}
+
+    local above_local_context = {}
+
+    local requests_query = queries.requests_query()
+
+    if vim.version.lt(vim.version(), "0.11.0") then
+        for _, match in requests_query:iter_matches(tree:root(), self.repr) do
+            local variable = nil
+
+            for id, node in pairs(match) do
+                local capture_name = requests_query.captures[id]
+                local capture_value =
+                    vim.trim(vim.treesitter.get_node_text(node, self.repr))
+
+                if capture_name == "request" then
+                    local request = self:extract_request(node)
+                    request.local_context = above_local_context
+                    above_local_context = {}
+
+                    table.insert(requests, request)
+                elseif capture_name == "variable_name" then
+                    variable = { name = capture_value, value = "" }
+                elseif capture_name == "variable_value" then
+                    if variable then
+                        variable.value = capture_value
+                    end
+                end
+            end
+
+            if variable then
+                above_local_context[variable.name] = variable.value
+                variable = nil
+            end
+        end
+    else
+        for _, match in requests_query:iter_matches(tree:root(), self.repr) do
+            local variable = nil
+
+            for id, nodes in pairs(match) do
+                local capture_name = requests_query.captures[id]
+
+                for _, node in ipairs(nodes) do
+                    local capture_value =
+                        vim.trim(vim.treesitter.get_node_text(node, self.repr))
+
+                    if capture_name == "request" then
+                        local request = self:extract_request(node)
+                        request.local_context = above_local_context
+                        above_local_context = {}
+
+                        table.insert(requests, request)
+                    elseif capture_name == "variable_name" then
+                        variable = { name = capture_value, value = "" }
+                    elseif capture_name == "variable_value" then
+                        if variable then
+                            variable.value = capture_value
+                        end
+                    end
+                end
+            end
+
+            if variable then
+                above_local_context[variable.name] = variable.value
+                variable = nil
+            end
+        end
+    end
+
+    return requests
 end
 
 function Source:get_closest_request_from(row)
@@ -374,22 +354,45 @@ function Source:get_request_context(request)
 
     local variables_query = queries.variables_query()
 
-    for _, match in
-        variables_query:iter_matches(tree:root(), self.repr, 0, stop)
-    do
-        ---@type http.Variable
-        local variable = { name = "", value = "" }
+    if vim.version.lt(vim.version(), "0.11.0") then
+        for _, match in
+            variables_query:iter_matches(tree:root(), self.repr, 0, stop)
+        do
+            ---@type http.Variable
+            local variable = { name = "", value = "" }
 
-        for id, node in pairs(match) do
-            local capture_name = variables_query.captures[id]
-            local capture_value =
-                vim.trim(vim.treesitter.get_node_text(node, self.repr))
+            for id, node in pairs(match) do
+                local capture_name = variables_query.captures[id]
+                local capture_value =
+                    vim.trim(vim.treesitter.get_node_text(node, self.repr))
 
-            -- capture_name is either "name" or "value"
-            variable[capture_name] = capture_value
+                -- capture_name is either "name" or "value"
+                variable[capture_name] = capture_value
+            end
+
+            context[variable.name] = variable.value
         end
+    else
+        for _, match in
+            variables_query:iter_matches(tree:root(), self.repr, 0, stop)
+        do
+            ---@type http.Variable
+            local variable = { name = "", value = "" }
 
-        context[variable.name] = variable.value
+            for id, nodes in pairs(match) do
+                local capture_name = variables_query.captures[id]
+
+                for _, node in ipairs(nodes) do
+                    local capture_value =
+                        vim.trim(vim.treesitter.get_node_text(node, self.repr))
+
+                    -- capture_name is either "name" or "value"
+                    variable[capture_name] = capture_value
+                end
+            end
+
+            context[variable.name] = variable.value
+        end
     end
 
     return context

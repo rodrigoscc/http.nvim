@@ -256,17 +256,17 @@ local function show_response(request, response, raw)
     local raw_winbar = winbar
         .. "%=%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
 
-    vim.wo[win][body_buf].winbar = body_winbar
+    vim.wo[win][0].winbar = body_winbar
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
-        vim.wo[win][headers_buf].winbar = headers_winbar
+        vim.wo[win][0].winbar = headers_winbar
     end, { buffer = body_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, raw_buf)
-        vim.wo[win][raw_buf].winbar = raw_winbar
+        vim.wo[win][0].winbar = raw_winbar
     end, { buffer = headers_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = raw_buf })
