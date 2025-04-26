@@ -78,6 +78,10 @@ local defaults = {
     ---Window config for the response window. Refer to :help nvim_open_win for the available keys.
     ---@type table
     win_config = { split = "below" },
+    ---Set compound filetypes in the response buffers (e.g. "httpnvim.json", "httpnvim.text").
+    ---This is primarily useful for blacklisting the buffers in plugins like Lualine.
+    ---@type boolean
+    use_compound_filetypes = false,
 }
 ```
 

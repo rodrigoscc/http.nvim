@@ -65,7 +65,7 @@ local function init_parser()
         filetype = "http",
     }
 
-    vim.treesitter.language.register("http2", "http")
+    vim.treesitter.language.register("http2", { "http", "httpnvim.http" })
 
     vim.filetype.add({
         extension = {

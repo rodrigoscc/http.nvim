@@ -151,44 +151,64 @@ local Buffer = {
     Raw = "raw",
 }
 
----Display http response in buffers
----@param request http.Request
----@param response http.Response
----@param raw http.Raw
-local function show_response(request, response, raw)
-    local winbar = get_winbar(request, response)
-
-    local body_winbar = winbar
-        .. "%=%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
-    local headers_winbar = winbar
-        .. "%=%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
-    local raw_winbar = winbar
-        .. "%=%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
-
-    local header_lines =
-        headers_to_lines(response.status_line, response.headers)
-
+local function create_body_buffer(request, response)
     local body_file_type = utils.get_body_file_type(response.headers)
     local body_lines = body_to_lines(response)
 
     local body_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(body_buf, 0, -1, true, body_lines)
-    -- Set filetype after adding lines for better performance with large bodies.
-    vim.api.nvim_set_option_value(
-        "filetype",
-        body_file_type,
-        { buf = body_buf }
-    )
 
-    local win =
-        vim.api.nvim_open_win(body_buf, false, config.options.win_config)
+    -- Set filetype after adding lines for better performance with large bodies.
+    if config.options.use_compound_filetypes then
+        vim.api.nvim_set_option_value(
+            "filetype",
+            "httpnvim." .. body_file_type,
+            { buf = body_buf }
+        )
+    else
+        vim.api.nvim_set_option_value(
+            "filetype",
+            body_file_type,
+            { buf = body_buf }
+        )
+    end
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
 
+    vim.b[body_buf].http_nvim_request = request
+    vim.b[body_buf].http_nvim_response = response
+    vim.b[body_buf].http_nvim_buffer = Buffer.Body
+
+    format_response(body_buf, response.body, body_file_type)
+
+    return body_buf
+end
+
+local function create_headers_buffer(request, response)
+    local header_lines =
+        headers_to_lines(response.status_line, response.headers)
+
     local headers_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
-    vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
 
+    if config.options.use_compound_filetypes then
+        vim.api.nvim_set_option_value(
+            "filetype",
+            "httpnvim.http",
+            { buf = headers_buf }
+        )
+    else
+        vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
+    end
+
+    vim.b[headers_buf].http_nvim_request = request
+    vim.b[headers_buf].http_nvim_response = response
+    vim.b[headers_buf].http_nvim_buffer = Buffer.Headers
+
+    return headers_buf
+end
+
+local function create_raw_buffet(request, response, raw)
     local curl_command = M.printable_command(raw.command)
 
     local raw_lines = {}
@@ -197,7 +217,46 @@ local function show_response(request, response, raw)
 
     local raw_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(raw_buf, 0, -1, true, raw_lines)
-    vim.api.nvim_set_option_value("filetype", "text", { buf = raw_buf })
+
+    if config.options.use_compound_filetypes then
+        vim.api.nvim_set_option_value(
+            "filetype",
+            "httpnvim.text",
+            { buf = raw_buf }
+        )
+    else
+        vim.api.nvim_set_option_value("filetype", "text", { buf = raw_buf })
+    end
+
+    vim.b[raw_buf].http_nvim_request = request
+    vim.b[raw_buf].http_nvim_response = response
+    vim.b[raw_buf].http_nvim_buffer = Buffer.Raw
+
+    return raw_buf
+end
+
+---Display http response in buffers
+---@param request http.Request
+---@param response http.Response
+---@param raw http.Raw
+local function show_response(request, response, raw)
+    local winbar = get_winbar(request, response)
+
+    local body_buf = create_body_buffer(request, response)
+    local headers_buf = create_headers_buffer(request, response)
+    local raw_buf = create_raw_buffet(request, response, raw)
+
+    local win =
+        vim.api.nvim_open_win(body_buf, false, config.options.win_config)
+
+    local body_winbar = winbar
+        .. "%=%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
+    local headers_winbar = winbar
+        .. "%=%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
+    local raw_winbar = winbar
+        .. "%=%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
+
+    vim.wo[win][body_buf].winbar = body_winbar
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
@@ -214,22 +273,6 @@ local function show_response(request, response, raw)
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, body_buf)
     end, { buffer = raw_buf })
-
-    vim.wo[win][body_buf].winbar = body_winbar
-
-    vim.b[body_buf].http_nvim_request = request
-    vim.b[body_buf].http_nvim_response = response
-    vim.b[body_buf].http_nvim_buffer = Buffer.Body
-
-    vim.b[headers_buf].http_nvim_request = request
-    vim.b[headers_buf].http_nvim_response = response
-    vim.b[headers_buf].http_nvim_buffer = Buffer.Headers
-
-    vim.b[raw_buf].http_nvim_request = request
-    vim.b[raw_buf].http_nvim_response = response
-    vim.b[raw_buf].http_nvim_buffer = Buffer.Raw
-
-    format_response(body_buf, response.body, body_file_type)
 end
 
 local function show_raw_output(request, raw)
