@@ -156,7 +156,7 @@ local function show_response(request, response, raw)
     -- Set filetype after adding lines for better performance with large bodies.
     vim.api.nvim_set_option_value(
         "filetype",
-        'http-nvim' .. body_file_type,
+        'http-nvim.' .. body_file_type,
         { buf = body_buf }
     )
 
