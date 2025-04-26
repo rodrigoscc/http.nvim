@@ -156,7 +156,7 @@ local function show_response(request, response, raw)
     -- Set filetype after adding lines for better performance with large bodies.
     vim.api.nvim_set_option_value(
         "filetype",
-        body_file_type .. '.http-nvim',
+        'http-nvim' .. body_file_type,
         { buf = body_buf }
     )
 
@@ -167,7 +167,7 @@ local function show_response(request, response, raw)
 
     local headers_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
-    vim.api.nvim_set_option_value("filetype", "http.http-nvim", { buf = headers_buf })
+    vim.api.nvim_set_option_value("filetype", "http-nvim.http", { buf = headers_buf })
 
     local curl_command = M.present_command(raw.command)
 
@@ -177,7 +177,7 @@ local function show_response(request, response, raw)
 
     local raw_buf = vim.api.nvim_create_buf(true, true)
     vim.api.nvim_buf_set_lines(raw_buf, 0, -1, true, raw_lines)
-    vim.api.nvim_set_option_value("filetype", "text.http-nvim", { buf = raw_buf })
+    vim.api.nvim_set_option_value("filetype", "http-nvim.text", { buf = raw_buf })
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
@@ -210,7 +210,7 @@ local function show_raw_output(request, raw)
     vim.list_extend(raw_lines, raw.output)
 
     local buf = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_set_option_value("filetype", "text.http-nvim", { buf = buf })
+    vim.api.nvim_set_option_value("filetype", "http-nvim.text", { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, raw_lines)
 
     local win = vim.api.nvim_open_win(buf, false, config.options.win_config)
