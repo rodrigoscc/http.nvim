@@ -95,8 +95,21 @@ M.present_command = function(command)
                 return p
             end
 
+            return vim.fn.shellescape(p)
+        end)
+        :join(" ")
+end
+
+M.printable_command = function(command)
+    return vim.iter(ipairs(command))
+        :map(function(i, p)
+            if i == 1 then
+                -- Do not escape executable.
+                return p
+            end
+
             local escaped = vim.fn.shellescape(p)
-            local result, _ = string.gsub(escaped, "\n", "\\n")
+            local result, _ = string.gsub(escaped, "\n", "\r")
             return result
         end)
         :join(" ")
@@ -169,7 +182,7 @@ local function show_response(request, response, raw)
     vim.api.nvim_buf_set_lines(headers_buf, 0, -1, false, header_lines)
     vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
 
-    local curl_command = M.present_command(raw.command)
+    local curl_command = M.printable_command(raw.command)
 
     local raw_lines = {}
     vim.list_extend(raw_lines, { curl_command, "" })
