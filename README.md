@@ -29,22 +29,22 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 
 ## ✨ Features
 - Store multiple requests in a `.http` file
-- Search project requests with Telescope or fzf-lua or snacks
-- Run project requests with Telescope or fzf-lua or snacks
-- Manage multiple environments per project
-- Declare global or request-scoped variables in the `.http` file
+- **Search** project requests with Telescope or fzf-lua or snacks
+- **Run** project requests with Telescope or fzf-lua or snacks
+- Manage multiple **environments** per project
+- Declare global or request-scoped **variables** in the `.http` file
 - Run last request run for easier API development iteration
-- Assign before and after hooks for each request. In a hook, you can:
+- Assign before and after **hooks** for each request. In a hook, you can:
     - Update the current environment
     - Access the response
     - Run other request with a different context
     - Condition the request to run or not
     - etc.
 - Hook functions are declared in a separate Lua file, for easier maintenance and reuse
-- Autocomplete variables with cmp
-- Inspect variables current value
-- See the raw curl command and output in a separate buffer
-- Copy the equivalent curl command of request under the cursor
+- **Autocomplete** variables with cmp
+- **Inspect** variables current value
+- See the **raw curl command** and raw output in a separate buffer
+- **Copy the equivalent curl command** of request under the cursor
 - Lualine component to show current environment
 
 ## 📦 Installation
