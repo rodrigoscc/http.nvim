@@ -173,8 +173,6 @@ local function create_body_buffer(request, response)
         )
     end
 
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
-
     vim.b[body_buf].http_nvim_request = request
     vim.b[body_buf].http_nvim_response = response
     vim.b[body_buf].http_nvim_buffer = Buffer.Body
@@ -283,6 +281,8 @@ local function show_response(request, response, raw)
     if config.options.builtin_winbar then
         vim.wo[win][0].winbar = body_winbar
     end
+
+    vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
