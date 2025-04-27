@@ -260,6 +260,60 @@ require("lualine").setup({
 })
 ```
 
+### Lualine winbar
+If you are using the lualine winbar, we provide two functions to include the response info in it.
+
+```lua
+require("lualine").setup({
+    winbar = {
+        lualine_a = {
+            {
+                require("http-nvim").http_response_left_winbar,
+            },
+        },
+        lualine_z = {
+            {
+                require("http-nvim").http_response_right_winbar,
+            },
+        },
+    },
+    inactive_winbar = {
+        lualine_a = {
+            {
+                require("http-nvim").http_response_left_winbar,
+            },
+        },
+        lualine_z = {
+            {
+                require("http-nvim").http_response_right_winbar,
+            },
+        },
+    }
+})
+```
+
+You can hide other winbar components in the response buffers using the function `require("http-nvim").is_http_response_buffer()`, which returns true if the current buffer is a http.nvim response buffer.
+
+```lua
+            --- ...
+            {
+                "filename",
+                cond = function()
+                    return not require("http-nvim").is_http_response_buffer()
+                end,
+            },
+            --- ...
+```
+
+If you see flickering when switching between the response buffers, that is the builtin winbar getting overridden by lualine, so go ahead and disable the http.nvim builtin winbar.
+
+```lua
+local http = require("http-nvim")
+http.setup({
+    builtin_winbar = false,
+})
+```
+
 ### Cmp source
 
 You can use the cmp source to complete variables in your requests.
