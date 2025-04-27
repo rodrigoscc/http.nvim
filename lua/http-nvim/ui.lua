@@ -48,10 +48,10 @@ local function sanitize_time_total(time_total)
     return math.floor(time_total * 100) / 100 -- keep two decimal places
 end
 
----Compute the winbar for this request
+---Compute the left side of the winbar for this request and response
 ---@param request http.Request
 ---@param response http.Response
-local function get_winbar(request, response)
+M.get_left_winbar = function(request, response)
     local id = request_id(request)
 
     local status_highlight = config.highlights.success_code
@@ -235,12 +235,39 @@ local function create_raw_buffer(request, response, raw)
     return raw_buf
 end
 
+M.get_body_right_winbar = function()
+    return "%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
+end
+
+M.get_headers_right_winbar = function()
+    return "%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
+end
+
+M.get_raw_right_winbar = function()
+    return "%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
+end
+
+---Computes the right side of the winbar depending on the active buffer type.
+---@param buffer_type http.BufferType
+---@return string
+M.get_right_winbar = function(buffer_type)
+    if buffer_type == Buffer.Body then
+        return M.get_body_right_winbar()
+    elseif buffer_type == Buffer.Headers then
+        return M.get_headers_right_winbar()
+    elseif buffer_type == Buffer.Raw then
+        return M.get_raw_right_winbar()
+    end
+
+    return ""
+end
+
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
 ---@param raw http.Raw
 local function show_response(request, response, raw)
-    local winbar = get_winbar(request, response)
+    local left_winbar = M.get_left_winbar(request, response)
 
     local body_buf = create_body_buffer(request, response)
     local headers_buf = create_headers_buffer(request, response)
@@ -249,24 +276,27 @@ local function show_response(request, response, raw)
     local win =
         vim.api.nvim_open_win(body_buf, false, config.options.win_config)
 
-    local body_winbar = winbar
-        .. "%=%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
-    local headers_winbar = winbar
-        .. "%=%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
-    local raw_winbar = winbar
-        .. "%=%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
+    local body_winbar = left_winbar .. "%=" .. M.get_body_right_winbar()
+    local headers_winbar = left_winbar .. "%=" .. M.get_headers_right_winbar()
+    local raw_winbar = left_winbar .. "%=" .. M.get_raw_right_winbar()
 
-    vim.wo[win][0].winbar = body_winbar
+    if config.options.builtin_winbar then
+        vim.wo[win][0].winbar = body_winbar
+    end
 
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, headers_buf)
-        vim.wo[win][0].winbar = headers_winbar
+        if config.options.builtin_winbar then
+            vim.wo[win][0].winbar = headers_winbar
+        end
     end, { buffer = body_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
     vim.keymap.set("n", "<Tab>", function()
         vim.api.nvim_win_set_buf(win, raw_buf)
-        vim.wo[win][0].winbar = raw_winbar
+        if config.options.builtin_winbar then
+            vim.wo[win][0].winbar = raw_winbar
+        end
     end, { buffer = headers_buf })
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = raw_buf })

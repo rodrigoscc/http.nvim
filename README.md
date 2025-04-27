@@ -84,6 +84,10 @@ local defaults = {
     ---This is primarily useful for blacklisting the buffers in plugins like Lualine.
     ---@type boolean
     use_compound_filetypes = false,
+    ---Disable builtin winbar if you are explicitly using the public
+    ---winbar functions with plugins like lualine and want to avoid flickering.
+    ---@type boolean
+    builtin_winbar = true,
 }
 ```
 

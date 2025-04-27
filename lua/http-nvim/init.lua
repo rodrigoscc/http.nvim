@@ -461,4 +461,30 @@ M.http_env_lualine_component = function()
     return "[ " .. env .. "]"
 end
 
+M.http_response_left_winbar = function()
+    if not M.is_http_response_buffer() then
+        return ""
+    end
+
+    return ui.get_left_winbar(vim.b.http_nvim_request, vim.b.http_nvim_response)
+end
+
+M.http_response_right_winbar = function()
+    if not M.is_http_response_buffer() then
+        return ""
+    end
+
+    local buffer_type = vim.b.http_nvim_buffer
+
+    return ui.get_right_winbar(buffer_type)
+end
+
+M.is_http_response_buffer = function(bufnr)
+    if bufnr == nil then
+        bufnr = 0
+    end
+
+    return vim.b[bufnr].http_nvim_buffer ~= nil
+end
+
 return M
