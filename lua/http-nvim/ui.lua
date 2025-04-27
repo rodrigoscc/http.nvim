@@ -310,7 +310,7 @@ local function show_raw_output(request, response, raw)
     local win = vim.api.nvim_open_win(buf, false, config.options.win_config)
 
     local winbar = get_error_winbar(request, raw)
-    vim.wo[win][buf].winbar = winbar
+    vim.wo[win][0].winbar = winbar
 
     vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf })
 end
