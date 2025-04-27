@@ -10,10 +10,10 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 
 <!-- toc -->
 
-  * [Features](#features)
-  * [Installation](#installation)
-  * [Configuration](#configuration)
-  * [Usage](#usage)
+  * [✨ Features](#%E2%9C%A8-features)
+  * [📦 Installation](#%F0%9F%93%A6-installation)
+  * [⚙️ Configuration](#%E2%9A%99%EF%B8%8F-configuration)
+  * [🚀 Usage](#%F0%9F%9A%80-usage)
     + [Response windows](#response-windows)
     + [Variables](#variables)
       - [Reserved request-scoped variables](#reserved-request-scoped-variables)
@@ -23,11 +23,11 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
     + [Lualine component](#lualine-component)
     + [Lualine winbar](#lualine-winbar)
     + [Cmp source](#cmp-source)
-- [Feature Roadmap](#feature-roadmap)
+- [📋 Feature Roadmap](#%F0%9F%93%8B-feature-roadmap)
 
 <!-- tocstop -->
 
-## Features
+## ✨ Features
 - Store multiple requests in a `.http` file
 - Search project requests with Telescope or fzf-lua or snacks
 - Run project requests with Telescope or fzf-lua or snacks
@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 - Copy the equivalent curl command of request under the cursor
 - Lualine component to show current environment
 
-## Installation
+## 📦 Installation
 
 Install the plugin with your preferred plugin manager:
 
@@ -77,7 +77,7 @@ Install the plugin with your preferred plugin manager:
 >
 > http.nvim will format any JSON response if `jq` is installed.
 
-## Configuration
+## ⚙️ Configuration
 
 Override any of the following defaults by passing a table to the `setup()` call.
 
@@ -112,7 +112,7 @@ local defaults = {
 }
 ```
 
-## Usage
+## 🚀 Usage
 
 Create a new `.http` file inside the `.http` directory of your project (e.g. `.http/requests.http`). Write your request in the file, and run it with `:Http run_closest`.
 
@@ -349,7 +349,7 @@ cmp.setup({
 })
 ```
 
-# Feature Roadmap
+# 📋 Feature Roadmap
 - [ ] Auto execute request at specified intervals
 - [ ] Keep a history of requests and responses
 - [ ] Support filtering responses with jq
