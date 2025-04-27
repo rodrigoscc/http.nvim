@@ -6,6 +6,27 @@
 
 https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
 
+# Table of Contents
+
+<!-- toc -->
+
+  * [Features](#features)
+  * [Installation](#installation)
+  * [Configuration](#configuration)
+  * [Usage](#usage)
+    + [Response windows](#response-windows)
+    + [Variables](#variables)
+      - [Reserved request-scoped variables](#reserved-request-scoped-variables)
+    + [Hooks](#hooks)
+    + [Environments](#environments)
+    + [Commands](#commands)
+    + [Lualine component](#lualine-component)
+    + [Lualine winbar](#lualine-winbar)
+    + [Cmp source](#cmp-source)
+- [Feature Roadmap](#feature-roadmap)
+
+<!-- tocstop -->
+
 ## Features
 - Store multiple requests in a `.http` file
 - Search project requests with Telescope or fzf-lua or snacks
