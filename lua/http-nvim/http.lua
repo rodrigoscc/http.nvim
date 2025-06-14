@@ -167,6 +167,7 @@ function Http:show(request, response, raw)
         self.buffer_types[buffer.bufnr] = buffer.type
         self.buffer_requests[buffer.bufnr] = request
         self.buffer_responses[buffer.bufnr] = response
+        -- TODO: clear deleted buffers
     end
 
     if #buffers > 0 then
