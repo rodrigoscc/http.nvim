@@ -364,9 +364,9 @@ local function create_buffers_from_error(request, response, raw)
 
     for lhs, rhs in pairs(buffer_opts.keys) do
         if type(rhs) == "string" then
-            rhs = keymaps.rhs_registry[rhs](buffers_map, {})
+            rhs = keymaps.builtin[rhs](buffers_map, {})
         elseif type(rhs) == "table" then
-            rhs = keymaps.rhs_registry[rhs[1]](buffers_map, rhs.opts or {})
+            rhs = keymaps.builtin[rhs[1]](buffers_map, rhs.opts or {})
         end
 
         vim.keymap.set("n", lhs, rhs, { buffer = bufnr })
