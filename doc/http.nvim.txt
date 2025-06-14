@@ -65,6 +65,47 @@ Default configuration ~
 	---winbar functions with plugins like lualine and want to avoid flickering.
 	---@type boolean
 	builtin_winbar = true,
+	---Options for each of the response buffers.
+	---@type (http.BufferType|http.BufferOpts)[]
+	buffers = {
+	    "body",
+	    "headers",
+	    "raw",
+	},
+	---Default options for every response buffer.
+	---@type http.BufferOpts
+	buffer_defaults = {
+	    keys = {
+		["<Tab>"] = "next_buffer",
+		["<C-r>"] = "rerun",
+		q = "close",
+	    },
+	},
+    }
+<
+
+Keymap configuration examples ~
+
+Switch directly to a specific buffer by using the "switch_buffer" builtin
+function.
+
+>lua
+    {
+	["<C-b>"] = {"switch_buffer", opts = {buffer = "body"}},
+	["<C-h>"] = {"switch_buffer", opts = {buffer = "headers"}},
+	["<C-r>"] = {"switch_buffer", opts = {buffer = "raw"}},
+    }
+<
+
+Execute custom functions.
+
+>lua
+    {
+	["<C-y>"] = function()
+	    local http = require("http-nvim.http")
+	    local request = http:get_buffer_request()
+	    vim.print(request.url)
+	end,
     }
 <
 

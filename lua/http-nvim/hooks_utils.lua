@@ -18,7 +18,7 @@ end
 
 M.show = function(request, response, raw)
     vim.schedule(function()
-        ui.show(request, response, raw)
+        http:show(request, response, raw)
     end)
 end
 

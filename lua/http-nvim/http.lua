@@ -6,8 +6,11 @@ local Parser = require("http-nvim.parser").Parser
 local log = require("http-nvim.log")
 
 ---@class Http
----@field last_request http.Request
----@field last_override_context table?
+---@field private last_request http.Request
+---@field private last_override_context table?
+---@field private buffer_types table<integer, http.BufferType>
+---@field private buffer_requests table<integer, http.Request>
+---@field private buffer_responses table<integer, http.Response>
 local Http = {}
 Http.__index = Http
 
@@ -15,6 +18,9 @@ function Http.new()
     return setmetatable({
         last_request = nil,
         last_override_context = nil,
+        buffer_types = {},
+        buffer_requests = {},
+        buffer_responses = {},
     }, Http)
 end
 
@@ -24,6 +30,39 @@ local function interp(s, tab)
             return tab[w:sub(3, -3)] or w
         end)
     )
+end
+
+---Get buffer type
+---@param bufnr integer?
+---@return http.BufferType?
+function Http:get_buffer_type(bufnr)
+    if bufnr == 0 or bufnr == nil then
+        bufnr = vim.api.nvim_get_current_buf()
+    end
+
+    return self.buffer_types[bufnr]
+end
+
+---Get buffer request
+---@param bufnr integer?
+---@return http.Request?
+function Http:get_buffer_request(bufnr)
+    if bufnr == 0 or bufnr == nil then
+        bufnr = vim.api.nvim_get_current_buf()
+    end
+
+    return self.buffer_requests[bufnr]
+end
+
+---Get buffer response
+---@param bufnr integer?
+---@return http.Response?
+function Http:get_buffer_response(bufnr)
+    if bufnr == 0 or bufnr == nil then
+        bufnr = vim.api.nvim_get_current_buf()
+    end
+
+    return self.buffer_responses[bufnr]
 end
 
 ---Use context to complete request data
@@ -113,11 +152,25 @@ function Http:_request_callback(command, request, after_hook)
 
         if after_hook == nil then
             vim.schedule(function()
-                ui.show(request, response, raw)
+                self:show(request, response, raw)
             end)
         else
             after_hook(request, response, raw)
         end
+    end
+end
+
+function Http:show(request, response, raw)
+    local buffers = ui.create_buffers(request, response, raw)
+
+    for _, buffer in ipairs(buffers) do
+        self.buffer_types[buffer.bufnr] = buffer.type
+        self.buffer_requests[buffer.bufnr] = request
+        self.buffer_responses[buffer.bufnr] = response
+    end
+
+    if #buffers > 0 then
+        ui.show_buffer(buffers[1])
     end
 end
 

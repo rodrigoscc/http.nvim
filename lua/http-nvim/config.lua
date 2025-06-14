@@ -1,5 +1,13 @@
 local M = {}
 
+---@class http.BufferAction
+---@field [1] string
+---@field opts table
+
+---@class http.BufferOpts
+---@field [1] http.BufferType?
+---@field keys table<string, string|http.BufferAction|fun()>
+
 ---@class http.Opts
 local defaults = {
     ---Http files must be stored in this directory for http.nvim to find them
@@ -27,6 +35,22 @@ local defaults = {
     ---winbar functions with plugins like lualine and want to avoid flickering.
     ---@type boolean
     builtin_winbar = true,
+    ---Options for each of the response buffers.
+    ---@type (http.BufferType|http.BufferOpts)[]
+    buffers = {
+        "body",
+        "headers",
+        "raw",
+    },
+    ---Default options for every response buffer.
+    ---@type http.BufferOpts
+    buffer_defaults = {
+        keys = {
+            ["<Tab>"] = "next_buffer",
+            ["<C-r>"] = "rerun",
+            q = "close",
+        },
+    },
 }
 
 ---@type http.Opts
@@ -42,10 +66,25 @@ local function define_highlights()
     ]])
 end
 
+local function merge_defaults(opts)
+    local options = vim.tbl_deep_extend("force", defaults, opts or {})
+
+    for i, buffer in ipairs(options.buffers) do
+        if type(buffer) == "string" then
+            local full_buffer_config = vim.deepcopy(options.buffer_defaults)
+            full_buffer_config[1] = buffer
+
+            options.buffers[i] = full_buffer_config
+        end
+    end
+
+    return options
+end
+
 ---@param opts? http.Opts
 M.setup = function(opts)
     define_highlights()
-    M.options = vim.tbl_deep_extend("force", defaults, opts or {})
+    M.options = merge_defaults(opts)
 end
 
 ---@return string

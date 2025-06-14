@@ -1,7 +1,12 @@
 local utils = require("http-nvim.utils")
 local request_id = require("http-nvim.requests").id
+local keymaps = require("http-nvim.keymaps")
 local status_namespace = vim.api.nvim_create_namespace("http-nvim-status")
 local config = require("http-nvim.config")
+
+---@class http.Buffer
+---@field bufnr integer
+---@field type http.BufferType
 
 local M = {}
 
@@ -173,10 +178,6 @@ local function create_body_buffer(request, response)
         )
     end
 
-    vim.b[body_buf].http_nvim_request = request
-    vim.b[body_buf].http_nvim_response = response
-    vim.b[body_buf].http_nvim_buffer = Buffer.Body
-
     format_response(body_buf, response.body, body_file_type)
 
     return body_buf
@@ -198,10 +199,6 @@ local function create_headers_buffer(request, response)
     else
         vim.api.nvim_set_option_value("filetype", "http", { buf = headers_buf })
     end
-
-    vim.b[headers_buf].http_nvim_request = request
-    vim.b[headers_buf].http_nvim_response = response
-    vim.b[headers_buf].http_nvim_buffer = Buffer.Headers
 
     return headers_buf
 end
@@ -226,101 +223,168 @@ local function create_raw_buffer(request, response, raw)
         vim.api.nvim_set_option_value("filetype", "text", { buf = raw_buf })
     end
 
-    vim.b[raw_buf].http_nvim_request = request
-    vim.b[raw_buf].http_nvim_response = response
-    vim.b[raw_buf].http_nvim_buffer = Buffer.Raw
-
     return raw_buf
 end
 
-M.get_body_right_winbar = function()
-    return "%#@comment.info# Body %*%#@comment# Headers %*%#@comment# Raw %*"
-end
-
-M.get_headers_right_winbar = function()
-    return "%#@comment# Body %*%#@comment.info# Headers %*%#@comment# Raw %*"
-end
-
-M.get_raw_right_winbar = function()
-    return "%#@comment# Body %*%#@comment# Headers %*%#@comment.info# Raw %*"
+--- Convert text into a title.
+---@param text string
+---@return string
+local function title(text)
+    local new_text = text:gsub("^%l", string.upper)
+    return new_text
 end
 
 ---Computes the right side of the winbar depending on the active buffer type.
 ---@param buffer_type http.BufferType
 ---@return string
 M.get_right_winbar = function(buffer_type)
-    if buffer_type == Buffer.Body then
-        return M.get_body_right_winbar()
-    elseif buffer_type == Buffer.Headers then
-        return M.get_headers_right_winbar()
-    elseif buffer_type == Buffer.Raw then
-        return M.get_raw_right_winbar()
+    local winbar = ""
+
+    for _, buffer in ipairs(config.options.buffers) do
+        local is_current_buffer = buffer[1] == buffer_type
+        if is_current_buffer then
+            winbar = winbar .. "%#@comment.info# " .. title(buffer[1]) .. " %*"
+        else
+            winbar = winbar .. "%#@comment# " .. title(buffer[1]) .. " %*"
+        end
     end
 
-    return ""
+    return winbar
 end
 
 ---Display http response in buffers
 ---@param request http.Request
 ---@param response http.Response
 ---@param raw http.Raw
-local function show_response(request, response, raw)
+local function create_buffers(request, response, raw)
     local left_winbar = M.get_left_winbar(request, response)
 
     local body_buf = create_body_buffer(request, response)
     local headers_buf = create_headers_buffer(request, response)
     local raw_buf = create_raw_buffer(request, response, raw)
 
-    local win =
-        vim.api.nvim_open_win(body_buf, false, config.options.win_config)
-
-    local body_winbar = left_winbar .. "%=" .. M.get_body_right_winbar()
-    local headers_winbar = left_winbar .. "%=" .. M.get_headers_right_winbar()
-    local raw_winbar = left_winbar .. "%=" .. M.get_raw_right_winbar()
+    local body_winbar = left_winbar .. "%=" .. M.get_right_winbar(Buffer.Body)
+    local headers_winbar = left_winbar
+        .. "%="
+        .. M.get_right_winbar(Buffer.Headers)
+    local raw_winbar = left_winbar .. "%=" .. M.get_right_winbar(Buffer.Raw)
 
     if config.options.builtin_winbar then
-        vim.wo[win][0].winbar = body_winbar
+        vim.api.nvim_create_autocmd("BufWinEnter", {
+            buffer = body_buf,
+            callback = function()
+                local win = vim.api.nvim_get_current_win()
+                vim.wo[win][0].winbar = body_winbar
+            end,
+            once = true,
+        })
+
+        vim.api.nvim_create_autocmd("BufWinEnter", {
+            buffer = headers_buf,
+            callback = function()
+                local win = vim.api.nvim_get_current_win()
+                vim.wo[win][0].winbar = headers_winbar
+            end,
+            once = true,
+        })
+
+        vim.api.nvim_create_autocmd("BufWinEnter", {
+            buffer = raw_buf,
+            callback = function()
+                local win = vim.api.nvim_get_current_win()
+                vim.wo[win][0].winbar = raw_winbar
+            end,
+            once = true,
+        })
     end
 
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = body_buf })
+    ---@type table<http.BufferType, integer>
+    local buffers_map = {
+        [Buffer.Body] = body_buf,
+        [Buffer.Headers] = headers_buf,
+        [Buffer.Raw] = raw_buf,
+    }
 
-    vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_win_set_buf(win, headers_buf)
-        if config.options.builtin_winbar then
-            vim.wo[win][0].winbar = headers_winbar
+    ---@type http.Buffer[]
+    local buffers = {}
+
+    for _, buffer in ipairs(config.options.buffers) do
+        local buffer_name = buffer[1]
+        local bufnr = buffers_map[buffer_name]
+
+        table.insert(buffers, { bufnr = bufnr, type = buffer_name })
+
+        for lhs, rhs in pairs(buffer.keys) do
+            if type(rhs) == "string" then
+                rhs = keymaps.builtin[rhs](buffers_map, {})
+            elseif type(rhs) == "table" then
+                rhs = keymaps.builtin[rhs[1]](buffers_map, rhs.opts or {})
+            end
+
+            vim.keymap.set("n", lhs, rhs, { buffer = bufnr })
         end
-    end, { buffer = body_buf })
+    end
 
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = headers_buf })
-    vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_win_set_buf(win, raw_buf)
-        if config.options.builtin_winbar then
-            vim.wo[win][0].winbar = raw_winbar
-        end
-    end, { buffer = headers_buf })
-
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = raw_buf })
-    vim.keymap.set("n", "<Tab>", function()
-        vim.api.nvim_win_set_buf(win, body_buf)
-    end, { buffer = raw_buf })
+    return buffers
 end
 
-local function show_raw_output(request, response, raw)
-    local buf = create_raw_buffer(request, response, raw)
-    local win = vim.api.nvim_open_win(buf, false, config.options.win_config)
-
+local function create_buffers_from_error(request, response, raw)
+    local bufnr = create_raw_buffer(request, response, raw)
     local winbar = get_error_winbar(request, raw)
-    vim.wo[win][0].winbar = winbar
 
-    vim.keymap.set("n", "q", vim.cmd.close, { buffer = buf })
+    if config.options.builtin_winbar then
+        vim.api.nvim_create_autocmd("BufWinEnter", {
+            buffer = bufnr,
+            callback = function()
+                local win = vim.api.nvim_get_current_win()
+                vim.wo[win][0].winbar = winbar
+            end,
+            once = true,
+        })
+    end
+
+    ---@type table<http.BufferType, integer>
+    local buffers_map = {
+        [Buffer.Raw] = bufnr,
+    }
+    ---@type http.Buffer[]
+    local buffers = {}
+
+    table.insert(buffers, { bufnr = bufnr, type = Buffer.Raw })
+
+    local buffer_opts = vim.iter(config.options.buffers)
+        :filter(function(v)
+            return v[1] == Buffer.Raw
+        end)
+        :next()
+
+    if buffer_opts == nil then
+        return {}, {}
+    end
+
+    for lhs, rhs in pairs(buffer_opts.keys) do
+        if type(rhs) == "string" then
+            rhs = keymaps.rhs_registry[rhs](buffers_map, {})
+        elseif type(rhs) == "table" then
+            rhs = keymaps.rhs_registry[rhs[1]](buffers_map, rhs.opts or {})
+        end
+
+        vim.keymap.set("n", lhs, rhs, { buffer = bufnr })
+    end
+
+    return buffers
 end
 
-M.show = function(request, response, raw)
+M.create_buffers = function(request, response, raw)
     if response ~= nil then
-        show_response(request, response, raw)
+        return create_buffers(request, response, raw)
     else
-        show_raw_output(request, response, raw)
+        return create_buffers_from_error(request, response, raw)
     end
+end
+
+M.show_buffer = function(buffer)
+    vim.api.nvim_open_win(buffer.bufnr, false, config.options.win_config)
 end
 
 ---@enum http.RequestState

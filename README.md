@@ -13,6 +13,7 @@ https://github.com/user-attachments/assets/5b74c2c1-8dff-4611-8be9-00281ee9e366
   * [✨ Features](#%E2%9C%A8-features)
   * [📦 Installation](#%F0%9F%93%A6-installation)
   * [⚙️ Configuration](#%E2%9A%99%EF%B8%8F-configuration)
+    + [Keymap configuration examples](#keymap-configuration-examples)
   * [🚀 Usage](#%F0%9F%9A%80-usage)
     + [Response windows](#response-windows)
     + [Variables](#variables)
@@ -109,8 +110,50 @@ local defaults = {
     ---winbar functions with plugins like lualine and want to avoid flickering.
     ---@type boolean
     builtin_winbar = true,
+    ---Options for each of the response buffers.
+    ---@type (http.BufferType|http.BufferOpts)[]
+    buffers = {
+        "body",
+        "headers",
+        "raw",
+    },
+    ---Default options for every response buffer.
+    ---@type http.BufferOpts
+    buffer_defaults = {
+        keys = {
+            ["<Tab>"] = "next_buffer",
+            ["<C-r>"] = "rerun",
+            q = "close",
+        },
+    },
 }
 ```
+
+### Keymap configuration examples
+
+Switch directly to a specific buffer by using the "switch_buffer" builtin
+function.
+
+```lua
+{
+    ["<C-b>"] = {"switch_buffer", opts = {buffer = "body"}},
+    ["<C-h>"] = {"switch_buffer", opts = {buffer = "headers"}},
+    ["<C-r>"] = {"switch_buffer", opts = {buffer = "raw"}},
+}
+```
+
+Execute custom functions.
+
+```lua
+{
+    ["<C-y>"] = function()
+        local http = require("http-nvim.http")
+        local request = http:get_buffer_request()
+        vim.print(request.url)
+    end,
+}
+```
+
 
 ## 🚀 Usage
 

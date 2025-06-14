@@ -18,8 +18,10 @@ M.get_requests = function()
 
     for _, file in ipairs(files) do
         local source = Source.new(SourceType.FILE, file)
-        local file_requests = source:get_requests()
-        vim.list_extend(requests, file_requests)
+        if source:verify_tree() then
+            local file_requests = source:get_requests()
+            vim.list_extend(requests, file_requests)
+        end
     end
 
     return requests
