@@ -4,6 +4,7 @@ local ui = require("http-nvim.ui")
 local curl = require("http-nvim.curl")
 local Parser = require("http-nvim.parser").Parser
 local log = require("http-nvim.log")
+local ElapsedTime = require("http-nvim.elapsed_time")
 
 ---@class Http
 ---@field private last_request http.Request
@@ -125,9 +126,6 @@ function Http:_request_callback(command, request, after_hook)
         local response = nil
         local status_ok = obj.code == 0
 
-        ---@type http.RequestState
-        local state = "error"
-
         if status_ok then
             local parser = Parser.new()
             local status, result =
@@ -136,13 +134,7 @@ function Http:_request_callback(command, request, after_hook)
             if status then
                 response = result
             end
-
-            state = "finished"
         end
-
-        vim.schedule(function()
-            ui.set_request_state(request, state)
-        end)
 
         ---@type http.Raw
         local raw = {
@@ -209,13 +201,25 @@ function Http:run(request, override_context)
     local curl_command = result
 
     local start_request = function()
-        ui.set_request_state(request, "running")
+        local elapsed_time = nil
 
-        vim.system(
-            curl_command,
-            { text = true },
-            self:_request_callback(curl_command, request, after_hook)
-        )
+        if request.source.type == "buffer" then
+            local bufnr = request.source.route
+            ---@cast bufnr integer
+
+            local line = unpack(request.start_range)
+
+            elapsed_time = ElapsedTime.new(bufnr, line)
+            elapsed_time:start()
+        end
+
+        vim.system(curl_command, { text = true }, function(obj)
+            if elapsed_time ~= nil then
+                elapsed_time:stop()
+            end
+
+            self:_request_callback(curl_command, request, after_hook)(obj)
+        end)
     end
 
     if before_hook ~= nil then
