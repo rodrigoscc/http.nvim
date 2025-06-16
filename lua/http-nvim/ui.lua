@@ -1,7 +1,6 @@
 local utils = require("http-nvim.utils")
 local request_id = require("http-nvim.requests").id
 local keymaps = require("http-nvim.keymaps")
-local status_namespace = vim.api.nvim_create_namespace("http-nvim-status")
 local config = require("http-nvim.config")
 
 ---@class http.Buffer
