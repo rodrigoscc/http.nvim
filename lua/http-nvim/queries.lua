@@ -1,7 +1,7 @@
 local M = {}
 
 local grammar_repo_url = "https://github.com/rodrigoscc/tree-sitter-http2"
-local grammar_repo_revision = "82bca7f0d12a850da674b339be79b77fd7303b88"
+local grammar_repo_revision = "70c4406365333cdafc60ec56ee7fbd2494ad44d6"
 
 local function clone_grammar_repo(path, callback)
     vim.system(
